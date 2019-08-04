@@ -1,6 +1,6 @@
 {
     "name": "ministo",
-    "version": "19.8.1",
+    "version": "19.8.3",
     "author": "Decentralization Authority <support@d14na.org>",
     "description": "Ministo — Token Mining Client",
     "license": "MIT",
@@ -14,19 +14,22 @@
         "postuninstall": "electron-builder install-app-deps"
     },
     "dependencies": {
-        "core-js": "^2.6.5",
-        "vue": "^2.6.10"
+        "core-js": "2.6.5",
+        "electron-store": "^4.0.0",
+        "numeral": "^2.0.6",
+        "vue": "2.6.10",
+        "web3-utils": "^1.2.0"
     },
     "devDependencies": {
-        "@vue/cli-plugin-babel": "^3.10.0",
-        "@vue/cli-plugin-eslint": "^3.10.0",
-        "@vue/cli-service": "^3.10.0",
-        "babel-eslint": "^10.0.1",
-        "electron": "^5.0.0",
-        "eslint": "^5.16.0",
-        "eslint-plugin-vue": "^5.0.0",
-        "vue-cli-plugin-electron-builder": "^1.3.6",
-        "vue-template-compiler": "^2.6.10"
+        "@vue/cli-plugin-babel": "3.10.0",
+        "@vue/cli-plugin-eslint": "3.10.0",
+        "@vue/cli-service": "3.10.0",
+        "babel-eslint": "10.0.1",
+        "electron": "5.0.0",
+        "eslint": "5.16.0",
+        "eslint-plugin-vue": "5.0.0",
+        "vue-cli-plugin-electron-builder": "1.3.6",
+        "vue-template-compiler": "2.6.10"
     },
     "eslintConfig": {
         "root": true,

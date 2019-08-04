@@ -86,11 +86,6 @@
 </template>
 
 <script>
-import {
-    mapActions,
-    mapGetters
-} from 'vuex'
-
 /* Import libraries. */
 import numeral from 'numeral'
 import Store from 'electron-store'
@@ -104,10 +99,10 @@ const web3Utils = require('web3-utils')
 const store = new Store()
 
 /* Import package.json. */
-const pjson = require('../../../package.json')
+const pjson = require('../../package.json')
 
 /* Initialize "hybrid" ministo. */
-const HybridMinisto = require('../../../build/Release/hybrid_ministo')
+const HybridMinisto = require('../../build/Release/hybrid_ministo')
 
 /* Initialize Minado.Network endpoint. */
 // const MINADO_NETWORK_URL = 'ws://asia.minado.network'
@@ -147,10 +142,6 @@ export default {
         ]
     }),
     computed: {
-        ...mapGetters([
-            'account',
-            'email'
-        ]),
         challengeDisplay () {
             if (this.minadoChallenge) {
                 return this.minadoChallenge
@@ -167,11 +158,6 @@ export default {
         }
     },
     methods: {
-        ...mapActions([
-            'clearEmail',
-            'updateEmail'
-        ]),
-
         /* Initialization. */
         async init () {
             /* Set version. */
