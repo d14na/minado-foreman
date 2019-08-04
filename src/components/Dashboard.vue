@@ -102,7 +102,8 @@ const store = new Store()
 const pjson = require('../../package.json')
 
 /* Initialize "hybrid" ministo. */
-const HybridMinisto = require('../../build/Release/hybrid_ministo')
+const HybridMinisto = require('./hybrid_ministo')
+// const HybridMinisto = require('../../build/Release/hybrid_ministo')
 
 /* Initialize Minado.Network endpoint. */
 // const MINADO_NETWORK_URL = 'ws://asia.minado.network'
