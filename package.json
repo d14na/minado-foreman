@@ -1,7 +1,7 @@
 {
-  "name": "ministo",
-  "version": "19.8.3",
-  "description": "Ministo — Token Mining Client",
+  "name": "minado-foreman",
+  "version": "19.8.5",
+  "description": "Minado Foreman — Crypto Mining Manager",
   "author": "Decentralization Authority <support@d14na.org>",
   "scripts": {
     "serve": "vue-cli-service serve",
@@ -43,7 +43,9 @@
       "plugin:vue/essential",
       "eslint:recommended"
     ],
-    "rules": {},
+    "rules": {
+        "no-console": "off"
+    },
     "parserOptions": {
       "parser": "babel-eslint"
     }

@@ -4,7 +4,7 @@
             <v-card height="100vh">
                 <v-card-title class="blue white--text elevation-3">
                     <span class="headline">
-                        Ministo
+                        Minado Foreman
                         <small><em><small>v{{version}}</small></em></small>
                     </span>
 
@@ -37,7 +37,7 @@
                         class="elevation-1 mt-4"
                         outline
                     >
-                        <h3>THIS IS YOUR MINISTO TAG</h3>
+                        <h3>THIS IS YOUR FOREMAN TAG</h3>
                     </v-alert>
 
                     <h1 class="text-xs-center mt-2 tag">{{tag}}</h1>
@@ -49,7 +49,7 @@
                         class="elevation-1 mt-3"
                         outline
                     >
-                        <h3>CURRENT MINISTO STATUS</h3>
+                        <h3>CURRENT FOREMAN STATUS</h3>
                     </v-alert>
 
                     <div class="system-status mt-2">
@@ -76,7 +76,7 @@
                         </div>
                     </div>
 
-                    <div class="activity-graph elevation-1">
+                    <div class="activity-graph elevation-1" @click="testExec">
                         [ REAL-TIME ACTIVITY GRAPH ]
                     </div>
                 </v-card-text>
@@ -299,6 +299,43 @@ export default {
             this.$electron.shell.openExternal(link)
         },
 
+        testExec () {
+            console.log('TEST EXEC')
+
+            const { spawn } = require('child_process')
+            const ps = spawn('ps', ['ax'])
+            const grep = spawn('grep', ['ssh'])
+
+            ps.stdout.on('data', (data) => {
+              grep.stdin.write(data);
+            });
+
+            ps.stderr.on('data', (data) => {
+              console.log(`ps stderr: ${data}`);
+            });
+
+            ps.on('close', (code) => {
+              if (code !== 0) {
+                console.log(`ps process exited with code ${code}`);
+              }
+              grep.stdin.end();
+            });
+
+            grep.stdout.on('data', (data) => {
+              console.log('\n\n',data.toString());
+            });
+
+            grep.stderr.on('data', (data) => {
+              console.log(`grep stderr: ${data}`);
+            });
+
+            grep.on('close', (code) => {
+              if (code !== 0) {
+                console.log(`grep process exited with code ${code}`);
+              }
+            })
+        },
+
         /* Retrieve the current tag. */
         getTag () {
             /* Retrieve tag from storage. */
@@ -482,7 +519,7 @@ export default {
     },
     mounted: async function () {
         /* Initialize. */
-        this.init()
+        // this.init()
     }
 }
 </script>
