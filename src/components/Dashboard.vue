@@ -1,88 +1,57 @@
 <template>
-    <v-layout row>
-        <v-flex>
-            <v-card height="100vh">
-                <v-card-title class="blue white--text elevation-3">
-                    <span class="headline">
-                        Minado Foreman
-                        <small><em><small>v{{version}}</small></em></small>
-                    </span>
+    <div>
+        <span class="headline">
+            Minado Foreman
+            <small><em><small>v{{version}}</small></em></small>
+        </span>
 
-                    <v-spacer></v-spacer>
+        <img src="~@/assets/icons/png/48x48.png" alt="logo">
 
-                    <img src="~@/assets/icons/png/48x48.png" alt="logo">
-                </v-card-title>
+        <h3>
+            Ready to start Token Mining? Let's GO!
+        </h3>
 
-                <v-card-text>
-                    <h3>
-                        Ready to start Token Mining? Let's GO!
-                    </h3>
+        <p class="mt-3">
+            Open your web browser to:
+            <br />
+            <strong @click="open('https://minado.network/#/tag/' + tag)">
+                https://minado.network/#/tag/{{tag}}</strong>
+        </p>
 
-                    <p class="mt-3">
-                        Open your web browser to:
-                        <br /><strong>https://minado.network/#/tag/{{tag}}</strong>
-                        <v-icon
-                            small
-                            class="ml-2 red--text"
-                            @click="open('https://minado.network/#/tag/' + tag)"
-                        >
-                            fa-external-link-alt
-                        </v-icon>
-                    </p>
+        <h3>THIS IS YOUR FOREMAN TAG</h3>
 
-                    <v-alert
-                        :value="true"
-                        type="info"
-                        color="light-blue"
-                        class="elevation-1 mt-4"
-                        outline
-                    >
-                        <h3>THIS IS YOUR FOREMAN TAG</h3>
-                    </v-alert>
+        <h1 class="text-xs-center mt-2 tag">{{tag}}</h1>
 
-                    <h1 class="text-xs-center mt-2 tag">{{tag}}</h1>
+        <h3>CURRENT FOREMAN STATUS</h3>
 
-                    <v-alert
-                        :value="true"
-                        type="info"
-                        color="light-blue"
-                        class="elevation-1 mt-3"
-                        outline
-                    >
-                        <h3>CURRENT FOREMAN STATUS</h3>
-                    </v-alert>
+        <div class="system-status mt-2">
+            <div class="left-side">
+                <ul>
+                    <li>Windows 10</li>
+                    <li>8GB Ram</li>
+                    <li>FAST Connectivity</li>
+                </ul>
+            </div>
 
-                    <div class="system-status mt-2">
-                        <div class="left-side">
-                            <ul>
-                                <li>Windows 10</li>
-                                <li>8GB Ram</li>
-                                <li>FAST Connectivity</li>
-                            </ul>
-                        </div>
+            <div class="right-side">
+                <div>
+                    Hash Rate: <span class="red--text">{{hashRate}}</span>
+                </div>
 
-                        <div class="right-side">
-                            <div>
-                                Hash Rate: <span class="red--text">{{hashRate}}</span>
-                            </div>
+                <div>
+                    # Hashes: {{numHashes}}
+                </div>
 
-                            <div>
-                                # Hashes: {{numHashes}}
-                            </div>
+                <div>
+                    Lodes Delivered: <span class="red--text">{{numLodesDisplay}}</span>
+                </div>
+            </div>
+        </div>
 
-                            <div>
-                                Lodes Delivered: <span class="red--text">{{numLodesDisplay}}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="activity-graph elevation-1" @click="testExec">
-                        [ REAL-TIME ACTIVITY GRAPH ]
-                    </div>
-                </v-card-text>
-            </v-card>
-        </v-flex>
-    </v-layout>
+        <div class="activity-graph elevation-1" @click="testExec">
+            [ REAL-TIME ACTIVITY GRAPH ]
+        </div>
+    </div>
 </template>
 
 <script>
@@ -90,6 +59,8 @@
 import numeral from 'numeral'
 import Store from 'electron-store'
 import SockJS from 'sockjs-client'
+
+import HybridMinisto from 'node-loader!../../build/Release/hybrid_ministo.node'
 
 /* Require modules. */
 const ipc = require('electron').ipcRenderer
@@ -102,8 +73,7 @@ const store = new Store()
 const pjson = require('../../package.json')
 
 /* Initialize "hybrid" ministo. */
-// const HybridMinisto = require('./hybrid_ministo.node')
-// const HybridMinisto = require('../../build/Release/hybrid_ministo')
+// const HybridMinisto = require('../../build/Release/hybrid_ministo.node')
 
 /* Initialize Minado.Network endpoint. */
 // const MINADO_NETWORK_URL = 'ws://asia.minado.network'
@@ -253,30 +223,34 @@ export default {
             }
 
             /* Initialize CPU Miner listener. */
-            ipc.on('startMining', (_event, _arg) => {
+            ipc.on('startMining', () => {
                 this.mine()
             })
 
             /* Initialize change tag listener. */
-            ipc.on('changeTag', (_event, _arg) => {
+            ipc.on('changeTag', () => {
                 this.changeTag()
             })
 
             /* Initialize change tag listener. */
             // FIXME: Why do we need to call this thru here??
-            ipc.on('openDevTools', (_event, _arg) => {
+            ipc.on('openDevTools', () => {
                 ipc.send('openDevTools')
             })
 
             /* Initialize hash update listener. */
             ipc.on('updateNumHashes', (_event, _arg) => {
-                this.numHashes = _arg
+                if (_event) {
+                    this.numHashes = _arg
+                }
                 // ipc.send('_debug', `this.numHashes [ ${this.numHashes} ]`)
             })
 
             /* Initialize hash update listener. */
             ipc.on('updateHashRate', (_event, _arg) => {
-                this.hashRate = _arg
+                if (_event) {
+                    this.hashRate = _arg
+                }
                 // ipc.send('_debug', `this.hashRate [ ${this.hashRate} ]`)
             })
 
@@ -519,7 +493,7 @@ export default {
     },
     mounted: async function () {
         /* Initialize. */
-        // this.init()
+        this.init()
     }
 }
 </script>
