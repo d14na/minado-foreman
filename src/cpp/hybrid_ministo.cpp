@@ -12,7 +12,7 @@
 /**
  * Hybrid Ministo (Class)
  */
-HybridMinisto::HybridMinisto() noexcept :
+HybridMinisto::HybridMinisto() :
     /* Vectors */
     m_solvers(std::thread::hardware_concurrency()),
     m_threads(std::thread::hardware_concurrency()),
@@ -148,7 +148,7 @@ void HybridMinisto::run()
         for (size_t x = 0; x < m_threads.size(); ++x)
             m_threads[x] = std::thread([&, x] { this->thr_func(this->m_solvers[x]); });
 
-        // ??
+        /* Wait for all threads to complete. */
         for (auto&& thr: m_threads)
             thr.join();
     }

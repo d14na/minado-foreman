@@ -23,7 +23,7 @@ class CPUSolver
 
     /* Classes */
     public:
-        CPUSolver() noexcept;
+        CPUSolver();
 
     /* Variables */
     public:

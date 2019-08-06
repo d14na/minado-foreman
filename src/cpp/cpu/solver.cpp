@@ -12,7 +12,7 @@ std::atomic<uint32_t> CPUSolver::hashes(0u); // statistics only
 /**
  * CPU Solver
  */
-CPUSolver::CPUSolver() noexcept :
+CPUSolver::CPUSolver() :
     m_address(ADDRESS_LENGTH),
     m_challenge(UINT256_LENGTH),
     m_target(UINT256_LENGTH),

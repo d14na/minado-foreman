@@ -5,11 +5,11 @@
 #ifndef  _HYBRIDMINISTO_H_
 #define  _HYBRIDMINISTO_H_
 
-#include "cpu/solver.h"
-#include "cuda/solver.h"
-
 #include <thread>
 #include <string.h>
+
+#include "cpu/solver.h"
+// #include "cuda/solver.h"
 
 /**
  * HybridMinisto
@@ -18,7 +18,7 @@ class HybridMinisto
 {
     /* Classes */
     public:
-        HybridMinisto() noexcept;
+        HybridMinisto();
         ~HybridMinisto();
 
     /* Actions */
