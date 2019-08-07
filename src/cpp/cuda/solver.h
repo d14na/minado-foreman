@@ -31,27 +31,27 @@ class CUDASolver
 
     /* Actions */
     public:
-        // void init();
-        // void stopSolving();
+        void init();
+        void stopSolving();
 
-        // bytes_t findSolution();
+        bytes_t findSolution();
 
     /* Setters */
     public:
-        // void setAddress(std::string const& addr);
-        // void setChallenge(std::string const& chal);
-        // void setTarget(std::string const& target);
-        // void setBlockSize(int size);
-        // void setThreadSize(int size);
+        void setAddress(std::string const& addr);
+        void setChallenge(std::string const& chal);
+        void setTarget(std::string const& target);
+        void setBlockSize(int size);
+        void setThreadSize(int size);
 
     /* Utilities */
     public:
-        // static void hexToBytes(std::string const& hex, bytes_t& bytes);
-        // static std::string bytesToString(bytes_t const& buffer);
-        // static std::string hexStr(char* data, int len);
-        // static bool lte(bytes_t const& left, bytes_t const& right);
+        static void hexToBytes(std::string const& hex, bytes_t& bytes);
+        static std::string bytesToString(bytes_t const& buffer);
+        static std::string hexStr(char* data, int len);
+        static bool lte(bytes_t const& left, bytes_t const& right);
 
-        // bool requiresRestart();
+        bool requiresRestart();
 
     /* (Private) Variables. */
     private:
@@ -76,8 +76,8 @@ class CUDASolver
 
     /* (Private) Actions */
     private:
-        // void updateGPULoop();
-        // void hash(bytes_t const& solution, bytes_t& digest);
+        void updateGPULoop();
+        void hash(bytes_t const& solution, bytes_t& digest);
 };
 
 #endif // !_CUDASOLVER_H_

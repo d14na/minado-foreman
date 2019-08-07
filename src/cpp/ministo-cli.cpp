@@ -4,6 +4,14 @@
 #include "hybrid_ministo.h"
 
 /**
+ * Initialize Globals
+ */
+std::string mChallenge;
+std::string mHardwareType;
+std::string mMinterAddress;
+std::string mTarget;
+
+/**
  * Start (Mining)
  */
 void start(HybridMinisto* _hm)
@@ -50,7 +58,7 @@ void start(HybridMinisto* _hm)
 /**
  * Main (Entry)
  */
-int main()
+int main(int argc, char* argv[])
 {
     /* Welcome. */
     std::cout << "\nWelcome to Ministo CLI v19.8.6" << std::endl
@@ -61,13 +69,78 @@ int main()
 
     /* Validate miner. */
     if (hybrid_ministo) {
-        hybrid_ministo->setHardwareType("cpu");
-        hybrid_ministo->setChallenge("0xc9ee65260340367d976a99c4b77ce5f3a52d70cb5949b5c0066a9d9f7eb340e8");
-        hybrid_ministo->setTarget("0x040000000000000000000000000000000000000000000000000000000000");
-        hybrid_ministo->setMinterAddress("0x669008FB464F645a65f8277aB7565e802cDCD5DE");
+        /* Handle first parameter (TARGET). */
+        if (argc > 1) {
+            /* Validate user input. */
+            if (std::string(argv[1]) != "")
+                mTarget = argv[1];
+        }
+
+        if (mTarget == "") {
+            /* Set default. */
+            // NOTE: This is the maximum token mining target of 2^234.
+            mTarget = "0x040000000000000000000000000000000000000000000000000000000000";
+        }
+
+        /* Set target. */
+        hybrid_ministo->setTarget(mTarget);
+
+        /* Handle second parameter (CHALLENGE). */
+        if (argc > 2) {
+            /* Validate user input. */
+            if (std::string(argv[2]) != "")
+                mChallenge = argv[2];
+        }
+
+        /* Valdiate challenge. */
+        if (mChallenge == "") {
+            // FOR TESTING PURPOSES ONLY
+            mChallenge = "0xc9ee65260340367d976a99c4b77ce5f3a52d70cb5949b5c0066a9d9f7eb340e8";
+        }
+
+        /* Set challenge. */
+        hybrid_ministo->setChallenge(mChallenge);
+
+        /* Handle third parameter (HARDWARE TYPE). */
+        if (argc > 3) {
+            /* Validate user input. */
+            if (std::string(argv[3]) != "")
+                mHardwareType = argv[3];
+        }
+
+        if (mHardwareType == "") {
+            mHardwareType = "cpu"; // valid are: cpu, cuda or opencl
+        }
+
+        /* Set hardware type. */
+        hybrid_ministo->setHardwareType(mHardwareType);
+
+        /* Handle fourth parameter (MINTER ADDRESS). */
+        if (argc > 4) {
+            /* Validate user input. */
+            if (std::string(argv[4]) != "")
+                mMinterAddress = argv[4];
+        }
+
+        /* Validate minter address. */
+        if (mMinterAddress == "") {
+            /* Set default. */
+            mMinterAddress = "0x669008FB464F645a65f8277aB7565e802cDCD5DE";
+        }
+
+        /* Set minter address. */
+        hybrid_ministo->setMinterAddress(mMinterAddress);
+
+        /* Display all initial settings. */
+        std::cout << "\n"
+                  << "    Current Difficulty Target [ " << mTarget << " ]" << std::endl
+                  << "    Current Mining Challenge  [ " << mChallenge << " ]" << std::endl
+                  << "    Current Hardware Type     [ " << mHardwareType << " ]" << std::endl
+                  << "    Current Minter's Address  [ " << mMinterAddress << " ]" << std::endl
+                  << std::endl;
 
         /* Start the miner. */
-        start(hybrid_ministo);
+        // start(hybrid_ministo);
     } else {
         // FIXME Let's report this error.
         std::cout << "Oops! `hybrid_ministo` is NOT ready for use." << std::endl;
