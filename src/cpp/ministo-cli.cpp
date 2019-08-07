@@ -140,7 +140,7 @@ int main(int argc, char* argv[])
                   << std::endl;
 
         /* Start the miner. */
-        // start(hybrid_ministo);
+        start(hybrid_ministo);
     } else {
         // FIXME Let's report this error.
         std::cout << "Oops! `hybrid_ministo` is NOT ready for use." << std::endl;
