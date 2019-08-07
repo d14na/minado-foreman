@@ -204,9 +204,7 @@ void HybridMinisto::stop()
 /**
  * Thread Function
  *
- * FIXME: `std::random_device` works poorly in Windows. We can simply
- *        have the user "seed" (an integer), since this DOES NOT have
- *        to be cryptographically secure.
+ * FIXME: `std::random_device` works POORLY in Windows.
  */
 void HybridMinisto::thr_func(CPUSolver& solver)
 {
@@ -236,11 +234,11 @@ void HybridMinisto::thr_func(CPUSolver& solver)
         /* Calculate seed. */
         seed = (rndInt ^ m_thr_cntr ^ epochTime);
 
-        std::cout << "rndInt: " << rndInt << " | "
-                  << "epochTime: " << epochTime << " | "
-                  << "m_thr_cntr: " << m_thr_cntr << " (XOR) "
-                  << "=> " << seed
-                  << std::endl;
+        // std::cout << "rndInt: " << rndInt << " | "
+        //           << "epochTime: " << epochTime << " | "
+        //           << "m_thr_cntr: " << m_thr_cntr << " (XOR) "
+        //           << "=> " << seed
+        //           << std::endl;
     }
 
     /* Initialize (Mersenne Twister) pseudo-random generator. */

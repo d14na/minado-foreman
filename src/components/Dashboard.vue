@@ -48,7 +48,7 @@
             </div>
         </div>
 
-        <div class="activity-graph elevation-1" @click="testExec">
+        <div class="activity-graph elevation-1" @click="testSpawn">
             [ REAL-TIME ACTIVITY GRAPH ]
         </div>
     </div>
@@ -59,8 +59,6 @@
 import numeral from 'numeral'
 import Store from 'electron-store'
 import SockJS from 'sockjs-client'
-
-import HybridMinisto from 'node-loader!../../build/Release/hybrid_ministo.node'
 
 /* Require modules. */
 const ipc = require('electron').ipcRenderer
@@ -179,7 +177,7 @@ export default {
                     // NOTE: Broadcast to all miners.
                     if (action === 'notify') {
                         /* Stop the miner. */
-                        HybridMinisto.stop()
+                        // HybridMinisto.stop()
 
                         /* Give it a sec. */
                         setTimeout(() => {
@@ -205,7 +203,7 @@ export default {
                     /* Stop mining. */
                     if (action === 'stop_mining' && data.tag === this.tag) {
                         /* Stop the miner. */
-                        HybridMinisto.stop()
+                        // HybridMinisto.stop()
                     }
                 }
             }
@@ -255,16 +253,16 @@ export default {
             })
 
             /* Set an interval to update mining stats. */
-            setInterval(
-                () => { this.printMiningStats() }, PRINT_STATS_TIMEOUT
-            )
+            // setInterval(
+            //     () => { this.printMiningStats() }, PRINT_STATS_TIMEOUT
+            // )
 
             /* Handle (process) exit. */
             process.on('exit', () => {
                 console.log('Process exiting... stopping miner')
 
                 /* Stop the CPU miner. */
-                HybridMinisto.stop()
+                // HybridMinisto.stop()
             })
         },
 
@@ -273,41 +271,25 @@ export default {
             this.$electron.shell.openExternal(link)
         },
 
-        testExec () {
-            console.log('TEST EXEC')
+        testSpawn () {
+            const spawn = require('cross-spawn')
 
-            const { spawn } = require('child_process')
-            const ps = spawn('ps', ['ax'])
-            const grep = spawn('grep', ['ssh'])
+            const ps = spawn('./bin/ministo')
 
             ps.stdout.on('data', (data) => {
-              grep.stdin.write(data);
+                // console.log('data', data)
+                console.log(data.toString())
             });
 
             ps.stderr.on('data', (data) => {
-              console.log(`ps stderr: ${data}`);
+                console.log(`ps stderr: ${data}`);
             });
 
             ps.on('close', (code) => {
-              if (code !== 0) {
-                console.log(`ps process exited with code ${code}`);
-              }
-              grep.stdin.end();
+                if (code !== 0) {
+                    console.log(`ps process exited with code ${code}`);
+                }
             });
-
-            grep.stdout.on('data', (data) => {
-              console.log('\n\n',data.toString());
-            });
-
-            grep.stderr.on('data', (data) => {
-              console.log(`grep stderr: ${data}`);
-            });
-
-            grep.on('close', (code) => {
-              if (code !== 0) {
-                console.log(`grep process exited with code ${code}`);
-              }
-            })
         },
 
         /* Retrieve the current tag. */
@@ -344,35 +326,35 @@ export default {
         },
 
         /* Update "native" miner parameters. */
-        updateHybridMinisto () {
-            // ipc.send('_debug', `updateHybridMinisto - ${this.minadoAddress} | ${this.minadoChallenge} | ${this.minadoTarget}`)
-
-            /* Set hardware type. */
-            // NOTE: Allowed values are either `cpu` or `cuda`.
-            // FIXME: Auto-detect CUDA GPU compatiblity.
-            HybridMinisto.setHardwareType('cpu')
-
-            /* Set minter's address. */
-            HybridMinisto.setMinterAddress(this.minadoAddress)
-
-            /* Validate challenge (number). */
-            // NOTE: `ethers..toHexString()` is truncating `00` from prefix.
-            if (this.minadoChallenge.length !== UINT256_LENGTH * 2 + 2) {
-                throw new Error(`Challenge length is incorrect [ ${this.minadoChallenge} ]`)
-            }
-
-            /* Set challenge (number). */
-            HybridMinisto.setChallenge(this.minadoChallenge)
-
-            /* Validate (difficulty) target. */
-            // NOTE: `ethers..toHexString()` is truncating `00` from prefix.
-            // if (this.minadoTarget.length !== UINT256_LENGTH * 2 + 2) {
-            //     throw new Error(`Target length is incorrect [ ${this.minadoTarget} ]`)
-            // }
-
-            /* Set (difficulty) target. */
-            HybridMinisto.setTarget(this.minadoTarget)
-        },
+        // updateHybridMinisto () {
+        //     // ipc.send('_debug', `updateHybridMinisto - ${this.minadoAddress} | ${this.minadoChallenge} | ${this.minadoTarget}`)
+        //
+        //     /* Set hardware type. */
+        //     // NOTE: Allowed values are either `cpu` or `cuda`.
+        //     // FIXME: Auto-detect CUDA GPU compatiblity.
+        //     HybridMinisto.setHardwareType('cpu')
+        //
+        //     /* Set minter's address. */
+        //     HybridMinisto.setMinterAddress(this.minadoAddress)
+        //
+        //     /* Validate challenge (number). */
+        //     // NOTE: `ethers..toHexString()` is truncating `00` from prefix.
+        //     if (this.minadoChallenge.length !== UINT256_LENGTH * 2 + 2) {
+        //         throw new Error(`Challenge length is incorrect [ ${this.minadoChallenge} ]`)
+        //     }
+        //
+        //     /* Set challenge (number). */
+        //     HybridMinisto.setChallenge(this.minadoChallenge)
+        //
+        //     /* Validate (difficulty) target. */
+        //     // NOTE: `ethers..toHexString()` is truncating `00` from prefix.
+        //     // if (this.minadoTarget.length !== UINT256_LENGTH * 2 + 2) {
+        //     //     throw new Error(`Target length is incorrect [ ${this.minadoTarget} ]`)
+        //     // }
+        //
+        //     /* Set (difficulty) target. */
+        //     HybridMinisto.setTarget(this.minadoTarget)
+        // },
 
         /* Hybrid miner. */
         mine () {
@@ -433,26 +415,26 @@ export default {
                 }
             } // verifyAndSubmit
 
-            HybridMinisto.stop()
+            // HybridMinisto.stop()
 
             /* Update the CPU miner's parameters. */
-            this.updateHybridMinisto()
+            // this.updateHybridMinisto()
 
             /* Set flag. */
             this.isMining = true
 
-            HybridMinisto.run((err, sol) => {
-                if (err) {
-                    ipc.send('_debug', `ERROR: Failed to run 'HybridMinisto'. [ ${err} ]`)
-                }
-
-                if (sol) {
-                    _verifyAndSubmit(sol)
-                }
-
-                /* Set flag. */
-                this.isMining = false
-            })
+            // HybridMinisto.run((err, sol) => {
+            //     if (err) {
+            //         ipc.send('_debug', `ERROR: Failed to run 'HybridMinisto'. [ ${err} ]`)
+            //     }
+            //
+            //     if (sol) {
+            //         _verifyAndSubmit(sol)
+            //     }
+            //
+            //     /* Set flag. */
+            //     this.isMining = false
+            // })
         },
 
         /***********************************************************************
@@ -477,19 +459,19 @@ export default {
         },
 
         /* Print/update mining stats. */
-        printMiningStats () {
-            /* Set hashes. */
-            const hashes = HybridMinisto.hashes()
-
-            /* Calucate hashrate. */
-            const rate = hashes / PRINT_STATS_TIMEOUT / 1000
-
-            /* Send update for number of hashes. */
-            ipc.send('numHashes', numeral(hashes).format('0,0'))
-
-            /* Send update for (formatted) hash rate. */
-            ipc.send('hashRate', `${numeral(rate).format('0,0.00')} MH/s`)
-        }
+        // printMiningStats () {
+        //     /* Set hashes. */
+        //     const hashes = HybridMinisto.hashes()
+        //
+        //     /* Calucate hashrate. */
+        //     const rate = hashes / PRINT_STATS_TIMEOUT / 1000
+        //
+        //     /* Send update for number of hashes. */
+        //     ipc.send('numHashes', numeral(hashes).format('0,0'))
+        //
+        //     /* Send update for (formatted) hash rate. */
+        //     ipc.send('hashRate', `${numeral(rate).format('0,0.00')} MH/s`)
+        // }
     },
     mounted: async function () {
         /* Initialize. */
