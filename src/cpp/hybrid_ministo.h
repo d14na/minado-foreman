@@ -18,7 +18,7 @@ class HybridMinisto
 {
     /* Classes */
     public:
-        HybridMinisto();
+        HybridMinisto() noexcept;
         ~HybridMinisto();
 
     /* Actions */

@@ -11,8 +11,13 @@
 
 /**
  * Hybrid Ministo (Class)
+ *
+ * Supporting: CPU, Nvidia CUDA and OpenCL devices.
+ *
+ * NOTE: `hardware_concurrency()` returns the number of concurrent threads
+ * supported by the implementation.
  */
-HybridMinisto::HybridMinisto() :
+HybridMinisto::HybridMinisto() noexcept :
     /* Vectors */
     m_solvers(std::thread::hardware_concurrency()),
     m_threads(std::thread::hardware_concurrency()),
@@ -27,9 +32,7 @@ HybridMinisto::HybridMinisto() :
 
 
 /**
- * Hybrid Ministo (Constructor)
- *
- * Supporting: CPU, Nvidia CUDA and OpenCL devices.
+ * Hybrid Ministo (Destructor)
  */
 HybridMinisto::~HybridMinisto()
 {
@@ -57,7 +60,8 @@ HybridMinisto::~HybridMinisto()
  */
 void HybridMinisto::setHardwareType(std::string const& hardwareType)
 {
-    std::cout << "Setting hardware type [ " << hardwareType << " ]\n";
+    /* Print to console (in machine format). */
+    std::cout << "[[SETTING]] [[HARDWARE_TYPE]] " << hardwareType << std::endl;
 
     /* Set hardware type. */
     m_hardwareType = hardwareType;
@@ -75,6 +79,9 @@ void HybridMinisto::setChallenge(std::string const& challenge)
     }
 }
 
+/**
+ * Set (Mining) Target
+ */
 void HybridMinisto::setTarget(std::string const& target)
 {
     if (strcmp(m_hardwareType.c_str(), "cuda") == 0) {
@@ -84,6 +91,9 @@ void HybridMinisto::setTarget(std::string const& target)
     }
 }
 
+/**
+ * Set Minter Address
+ */
 void HybridMinisto::setMinterAddress(std::string const& minterAddress)
 {
     if (strcmp(m_hardwareType.c_str(), "cuda") == 0) {
@@ -93,6 +103,9 @@ void HybridMinisto::setMinterAddress(std::string const& minterAddress)
     }
 }
 
+/**
+ * Set Block Size
+ */
 void HybridMinisto::setBlockSize(std::string const& blocksize)
 {
     std::cout << "Setting block size: [ " << blocksize << " ]\n";
@@ -102,6 +115,9 @@ void HybridMinisto::setBlockSize(std::string const& blocksize)
     // cudaSolver.setBlockSize(i);
 }
 
+/**
+ * Set Thread Size
+ */
 void HybridMinisto::setThreadSize(std::string const& threadsize)
 {
     std::cout << "Setting thread size: " << threadsize << "\n";
@@ -112,14 +128,13 @@ void HybridMinisto::setThreadSize(std::string const& threadsize)
 }
 
 /**
- * RUN
+ * Run!!
  *
  * This is a the "main" thread of execution.
  */
 void HybridMinisto::run()
 {
-    std::cout << "\n--Starting Ministo.. Hardware type is: " << m_hardwareType.c_str() << std::endl;
-
+    /* Detect hardware type. */
     if (strcmp(m_hardwareType.c_str(), "cuda") == 0) {
         /* Initialize solution flag. */
         m_bSolutionFound = false;
@@ -172,19 +187,22 @@ void HybridMinisto::stop()
  */
 void HybridMinisto::thr_func(CPUSolver& solver)
 {
+    /* Initailize randomizer. */
+    // FIXME: This is NOT working on Windows.
     std::random_device r;
     std::mt19937_64 gen(r());
     std::uniform_int_distribution<> dist(0, 0xffffffff);
 
+    /* Initialize solution. */
     CPUSolver::bytes_t solution(CPUSolver::UINT256_LENGTH);
 
     /* Loop! */
     while (!m_bExit) {
         for (size_t i = 0; i < solution.size(); i += 4) {
-            /* Initialize (temp) solution. */
+            /* Initialize (temp) distribution. */
             uint32_t const tmp = dist(gen);
 
-            /* Calculate solution. */
+            /* Calculate solution (from distribution). */
             solution[i]     = static_cast<uint8_t> (tmp & 0x000000ff);
             solution[i + 1] = static_cast<uint8_t>((tmp & 0x0000ff00) >> 8);
             solution[i + 2] = static_cast<uint8_t>((tmp & 0x00ff0000) >> 16);
@@ -210,6 +228,7 @@ void HybridMinisto::thr_func(CPUSolver& solver)
 void HybridMinisto::solutionFound(CPUSolver::bytes_t const& solution)
 {
     {
+        /* Initialize (guarded) mutex. */
         std::lock_guard<std::mutex> g(m_solution_mutex);
 
         /* Set solution. */

@@ -23,7 +23,7 @@ class CPUSolver
 
     /* Classes */
     public:
-        CPUSolver();
+        CPUSolver() noexcept;
 
     /* Variables */
     public:
@@ -65,7 +65,6 @@ class CPUSolver
     private:
         void updateBuffer();
         void hash(bytes_t const& solution, bytes_t& digest);
-
 };
 
 #endif // !_CPUSOLVER_H_

@@ -12,7 +12,7 @@ std::atomic<uint32_t> CPUSolver::hashes(0u); // statistics only
 /**
  * CPU Solver
  */
-CPUSolver::CPUSolver() :
+CPUSolver::CPUSolver() noexcept :
     m_address(ADDRESS_LENGTH),
     m_challenge(UINT256_LENGTH),
     m_target(UINT256_LENGTH),
@@ -62,18 +62,21 @@ void CPUSolver::setTarget(std::string const& target)
     /* Valiate target. */
     assert(target.length() <= (UINT256_LENGTH * 2 + 2));
 
-    // FIXME: What is this for??
-    std::string const t(static_cast<std::string::size_type>(UINT256_LENGTH * 2 + 2) - target.length(), '0');
+    /* Zero padding. */
+    std::string const zero_pad(
+        static_cast<std::string::size_type>(UINT256_LENGTH * 2 + 2) - target.length(),
+        '0');
 
     /**
      * Double-buffer system, the trySolution() function will be blocked
      * only when a change occurs.
      */
     {
+        /* Initialize (guarded) mutex. */
         std::lock_guard<std::mutex> g(m_target_mutex);
 
         /* Convert from hex to bytes. */
-        hexToBytes("0x" + t + target.substr(2), m_target_tmp);
+        hexToBytes("0x" + zero_pad + target.substr(2), m_target_tmp);
     }
 
     /* Set target flag. */
@@ -85,7 +88,7 @@ void CPUSolver::setTarget(std::string const& target)
  *
  * Buffer order:
  *     1 - Challenge
- *     2 - Minter (ETH) Address
+ *     2 - Minter (ETH) Address (will typically belong to a pool)
  *     3 - Solution / Nonce
  */
 void CPUSolver::updateBuffer()
@@ -95,8 +98,13 @@ void CPUSolver::updateBuffer()
      * to acquire a lock on each hash() loop.
      */
     {
+        /* Initialize (guarded) mutex. */
         std::lock_guard<std::mutex> g(m_buffer_mutex);
+
+        /* Copy challenge into buffer. */
         std::copy(m_challenge.cbegin(), m_challenge.cend(), m_buffer_tmp.begin());
+
+        /* Copy address into buffer (after challenge). */
         std::copy(m_address.cbegin(), m_address.cend(), m_buffer_tmp.begin() + m_challenge.size());
     }
 
@@ -109,16 +117,23 @@ void CPUSolver::updateBuffer()
  */
 void CPUSolver::hash(bytes_t const& solution, bytes_t& digest)
 {
+    /* Validate buffer. */
     if (m_buffer_ready) {
+        /* Initialize (guarded) mutex. */
         std::lock_guard<std::mutex> g(m_buffer_mutex);
 
+        /* Swap buffer. */
         m_buffer.swap(m_buffer_tmp);
 
         /* Set buffer flag. */
         m_buffer_ready = false;
     }
 
-    std::copy(solution.cbegin(), solution.cend(), m_buffer.begin() + m_challenge.size() + m_address.size());
+    /* Copy solution to buffer (after challenge and address). */
+    std::copy(
+        solution.cbegin(),
+        solution.cend(),
+        m_buffer.begin() + m_challenge.size() + m_address.size());
 
     /* Perform (keccak) hash. */
     keccak_256(&digest[0], digest.size(), &m_buffer[0], m_buffer.size());
@@ -135,9 +150,12 @@ bool CPUSolver::trySolution(bytes_t const& solution)
     /* Request (keccak) hash. */
     hash(solution, digest);
 
+    /* Validate target. */
     if (m_target_ready) {
+        /* Initialize (guarded) mutex. */
         std::lock_guard<std::mutex> g(m_target_mutex);
 
+        /* Swap buffer. */
         m_target.swap(m_target_tmp);
 
         /* Set target flag. */
@@ -172,6 +190,7 @@ void CPUSolver::hexToBytes(std::string const& hex, bytes_t& bytes)
  */
 std::string CPUSolver::bytesToString(bytes_t const& buffer)
 {
+    /* Initialize output. */
     std::string output;
 
     output.reserve(buffer.size() * 2 + 1);
@@ -179,16 +198,20 @@ std::string CPUSolver::bytesToString(bytes_t const& buffer)
     for (unsigned i = 0; i < buffer.size(); ++i)
         output += ascii[buffer[i]];
 
+    /* Return output. */
     return output;
 }
 
 /**
  * Less-Than-Or-Equal
  *
+ * Compare byte-by-byte from left to right.
+ *
  * NOTE: This is a static function.
  */
 bool CPUSolver::lte(bytes_t const& left, bytes_t const& right)
 {
+    /* Validate inputs. */
     assert(left.size() == right.size());
 
     for (unsigned i = 0; i < left.size(); ++i) {
