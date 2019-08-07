@@ -11,10 +11,13 @@ std::string mHardwareType;
 std::string mMinterAddress;
 std::string mTarget;
 
+int shiftStart = 0;
+const int MAX_SHIFT_DURATION = 900; // FOR TESTING PURPOSES ONLY
+
 /**
  * Start (Mining)
  */
-void start(HybridMinisto* _hm)
+bool start(HybridMinisto* _hm)
 {
     /* Get time now. */
     auto nowTime = std::chrono::system_clock::now();
@@ -22,6 +25,17 @@ void start(HybridMinisto* _hm)
     /* Convert to seconds (since epoch). */
     std::time_t startTime =
         std::chrono::system_clock::to_time_t(nowTime);
+
+    /* Check shift time. */
+    if (shiftStart == 0) {
+        shiftStart = startTime;
+    } else {
+        if (startTime > shiftStart + MAX_SHIFT_DURATION) {
+            std::cout << "\n    *** Hey! It looks like your shift is all done. ***\n" << std::endl;
+
+            return 0;
+        }
+    }
 
     std::cout << "\nStarting Hybrid Ministo's Solver @ " << std::ctime(&startTime) << std::endl;
 
@@ -53,6 +67,8 @@ void start(HybridMinisto* _hm)
     } else {
         std::cout << "Something went wrong. This is the solution we received: " << _hm->solution() << std::endl;
     }
+
+    return 0;
 }
 
 /**
@@ -140,7 +156,7 @@ int main(int argc, char* argv[])
                   << std::endl;
 
         /* Start the miner. */
-        start(hybrid_ministo);
+        return start(hybrid_ministo);
     } else {
         // FIXME Let's report this error.
         std::cout << "Oops! `hybrid_ministo` is NOT ready for use." << std::endl;

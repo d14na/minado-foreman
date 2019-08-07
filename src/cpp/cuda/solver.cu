@@ -151,10 +151,10 @@ void CUDASolver::updateGPULoop()
         /* Validate target length. */
         if (s_target.length() < 66) {
             /* Calculate zero padding (if necessary). */
-            std::string zeros = std::string(66 - s_target.length(), '0');
+            std::string zero_pad = std::string(66 - s_target.length(), '0');
 
             /* Add zero padding (if necessary). */
-            std::string s = "0x" + zeros + s_target.substr(2, s_target.length());
+            std::string s = "0x" + zero_pad + s_target.substr(2, s_target.length());
 
             /* Re-assign target (string). */
             s_target = s;
@@ -172,36 +172,41 @@ void CUDASolver::updateGPULoop()
         for (int i = 0; i < 32; i++) {
             target_input[i] = (unsigned char) target_bytes[i];
 
-            printf("%02x", (unsigned char) target_input[i]);
+            // printf("%02x", (unsigned char) target_input[i]);
         }
 
+        /* Initialize hash prefix. */
+        // NOTE: Size of challenge[32] + address[20]
         unsigned char hash_prefix[52];
 
+        // Clean challenge (string)??
         std::string clean_challenge = s_challenge;
 
+        /* Initialize challenge (bytes). */
         bytes_t challenge_bytes(32);
 
         /* Convert from hex to bytes. */
         hexToBytes(clean_challenge, challenge_bytes);
 
+        /* Set challenge. */
         for (int i = 0; i < 32; i++) {
             hash_prefix[i] = (unsigned char) challenge_bytes[i];
         }
 
+        /* Set address (after challenge). */
         for (int i = 0; i < 20; i++) {
             hash_prefix[i+32] = (unsigned char)m_address[i];
         }
 
-        printf("Challenge + Address:\n");
+        // printf("Challenge + Address:\n");
 
-        for (int i = 0; i < 52; i++) {
-            printf("%02x", (unsigned char) hash_prefix[i]);
-        }
-
-        printf("\n/prefix\n");
+        // for (int i = 0; i < 52; i++) {
+        //     printf("%02x", (unsigned char) hash_prefix[i]);
+        // }
 
         printf("Updating mining inputs..\n");
 
+        /* Update mining inputs. */
         update_mining_inputs((const char *)target_input , (const char *)hash_prefix);
     }
 }
@@ -249,10 +254,10 @@ CUDASolver::bytes_t CUDASolver::findSolution( )
     /* Validate target length. */
     if (s_target.length() < 66) {
         /* Calculate zero padding (if necessary). */
-        std::string zeros = std::string(66 - s_target.length(), '0');
+        std::string zero_pad = std::string(66 - s_target.length(), '0');
 
         /* Add zero padding (if necessary). */
-        std::string s = "0x" + zeros + s_target.substr(2, s_target.length());
+        std::string s = "0x" + zero_pad + s_target.substr(2, s_target.length());
 
         /* Re-assign target (string). */
         s_target = s;
