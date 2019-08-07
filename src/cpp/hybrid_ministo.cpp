@@ -217,8 +217,6 @@ void HybridMinisto::solutionFound(CPUSolver::bytes_t const& solution)
 
         /* Set solution flag. */
         m_bSolutionFound = true;
-
-        std::cout << "\nFound a solution " << this->solution() << std::endl;
     }
 
     /* Stop solving. */
