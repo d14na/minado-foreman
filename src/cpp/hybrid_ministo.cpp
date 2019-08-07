@@ -215,12 +215,10 @@ void HybridMinisto::solutionFound(CPUSolver::bytes_t const& solution)
         /* Set solution. */
         m_solution = solution;
 
-        std::cout << "\nFound a solution (A) " << CPUSolver::bytesToString(solution) << std::endl;
-
         /* Set solution flag. */
         m_bSolutionFound = true;
 
-        std::cout << "\nFound a solution (B) " << this->solution() << std::endl;
+        std::cout << "\nFound a solution " << this->solution() << std::endl;
     }
 
     /* Stop solving. */
