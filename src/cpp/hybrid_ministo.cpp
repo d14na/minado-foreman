@@ -1,4 +1,5 @@
 #include <chrono>
+#include <fstream>
 #include <random>
 #include <thread>
 
@@ -182,6 +183,45 @@ void HybridMinisto::stop()
     m_bExit = true;
 }
 
+// bool acquire_context(HCRYPTPROV *ctx)
+// {
+//     if (!CryptAcquireContext(ctx, nullptr, nullptr, PROV_RSA_FULL, 0)) {
+//         return CryptAcquireContext(ctx, nullptr, nullptr, PROV_RSA_FULL, CRYPT_NEWKEYSET);
+//     }
+//
+//     return true;
+// }
+
+// size_t sysrandom(void* dst, size_t dstlen)
+// {
+//     HCRYPTPROV ctx;
+//
+//     if (!acquire_context(&ctx)) {
+//         throw std::runtime_error("Unable to initialize Win32 crypt library.");
+//     }
+//
+//     BYTE* buffer = reinterpret_cast<BYTE*>(dst);
+//
+//     if(!CryptGenRandom(ctx, dstlen, buffer)) {
+//         throw std::runtime_error("Unable to generate random bytes.");
+//     }
+//
+//     if (!CryptReleaseContext(ctx, 0)) {
+//         throw std::runtime_error("Unable to release Win32 crypt library.");
+//     }
+//
+//     return dstlen;
+// }
+
+size_t sysrandom(void* dst, size_t dstlen)
+{
+    char* buffer = reinterpret_cast<char*>(dst);
+    std::ifstream stream("/dev/urandom", std::ios_base::binary | std::ios_base::in);
+    stream.read(buffer, dstlen);
+
+    return dstlen;
+}
+
 /**
  * Thread Function
  */
@@ -189,8 +229,12 @@ void HybridMinisto::thr_func(CPUSolver& solver)
 {
     /* Initailize randomizer. */
     // FIXME: This is NOT working on Windows.
-    std::random_device r;
-    std::mt19937_64 gen(r());
+    // std::random_device r;
+    // std::mt19937_64 gen(r());
+    // https://stackoverflow.com/questions/45069219/how-to-succinctly-portably-and-thoroughly-seed-the-mt19937-prng
+    std::uint_least32_t seed;
+    sysrandom(&seed, sizeof(seed));
+    std::mt19937 gen(seed);
     std::uniform_int_distribution<> dist(0, 0xffffffff);
 
     /* Initialize solution. */

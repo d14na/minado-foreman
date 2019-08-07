@@ -37,7 +37,7 @@ bool start(HybridMinisto* _hm)
         }
     }
 
-    std::cout << "\nStarting Hybrid Ministo's Solver @ " << std::ctime(&startTime) << std::endl;
+    std::cout << "\nStarting Ministo's Solver @ " << std::ctime(&startTime) << std::endl;
 
     /**
      * WARNING!!!
