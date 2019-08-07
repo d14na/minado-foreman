@@ -49,7 +49,7 @@
         </div>
 
         <div class="activity-graph elevation-1" @click="testSpawn">
-            [ REAL-TIME ACTIVITY GRAPH ]
+            [ {{realtime}} ]
         </div>
     </div>
 </template>
@@ -94,6 +94,8 @@ export default {
         minadoChallenge: '',
         minadoDifficulty: '',
         minadoTarget: '',
+
+        realtime: 'REAL-TIME ACTIVITY GRAPH',
 
         hashRate: 'n/a',
         numHashes: 0,
@@ -279,6 +281,7 @@ export default {
             ps.stdout.on('data', (data) => {
                 // console.log('data', data)
                 console.log(data.toString())
+                this.realtime = data.toString()
             });
 
             ps.stderr.on('data', (data) => {
