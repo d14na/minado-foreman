@@ -26,6 +26,7 @@ class HybridMinisto
         void run();
         void stop();
 
+        void setSeed(int const& prngSeed);
         void setChallenge(std::string const& challenge);
         void setTarget(std::string const& target);
         void setMinterAddress(std::string const& minterAddress);
@@ -39,6 +40,9 @@ class HybridMinisto
 
     /* (Private) Variables. */
     private:
+        /* Values. */
+        int m_prngSeed;
+
         /* Strings */
         std::string m_hardwareType;
 

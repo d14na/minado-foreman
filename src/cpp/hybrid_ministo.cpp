@@ -23,6 +23,9 @@ HybridMinisto::HybridMinisto() noexcept :
     m_solvers(std::thread::hardware_concurrency()),
     m_threads(std::thread::hardware_concurrency()),
 
+    /* Values. */
+    m_prngSeed(0),
+
     /* Booleans */
     m_bSolutionFound(false),
     m_bExit(false),
@@ -55,6 +58,20 @@ HybridMinisto::~HybridMinisto()
 }
 
 /**
+ * Set PRNG Seed
+ *
+ * This is a 32-bit integer that seeds `mt19937_64`.
+ */
+void HybridMinisto::setSeed(int const& prngSeed)
+{
+    /* Print to console (in machine format). */
+    std::cout << "::SETTING:PRNG_SEED " << prngSeed << std::endl;
+
+    /* Set seed. */
+    m_prngSeed = prngSeed;
+}
+
+/**
  * Set Hardware Type
  *
  * Available options are: 'cpu' or 'gpu'
@@ -62,7 +79,7 @@ HybridMinisto::~HybridMinisto()
 void HybridMinisto::setHardwareType(std::string const& hardwareType)
 {
     /* Print to console (in machine format). */
-    std::cout << "[[SETTING]] [[HARDWARE_TYPE]] " << hardwareType << std::endl;
+    std::cout << "::SETTING:HARDWARE_TYPE " << hardwareType << std::endl;
 
     /* Set hardware type. */
     m_hardwareType = hardwareType;
@@ -183,58 +200,39 @@ void HybridMinisto::stop()
     m_bExit = true;
 }
 
-// bool acquire_context(HCRYPTPROV *ctx)
-// {
-//     if (!CryptAcquireContext(ctx, nullptr, nullptr, PROV_RSA_FULL, 0)) {
-//         return CryptAcquireContext(ctx, nullptr, nullptr, PROV_RSA_FULL, CRYPT_NEWKEYSET);
-//     }
-//
-//     return true;
-// }
-
-// size_t sysrandom(void* dst, size_t dstlen)
-// {
-//     HCRYPTPROV ctx;
-//
-//     if (!acquire_context(&ctx)) {
-//         throw std::runtime_error("Unable to initialize Win32 crypt library.");
-//     }
-//
-//     BYTE* buffer = reinterpret_cast<BYTE*>(dst);
-//
-//     if(!CryptGenRandom(ctx, dstlen, buffer)) {
-//         throw std::runtime_error("Unable to generate random bytes.");
-//     }
-//
-//     if (!CryptReleaseContext(ctx, 0)) {
-//         throw std::runtime_error("Unable to release Win32 crypt library.");
-//     }
-//
-//     return dstlen;
-// }
-
-size_t sysrandom(void* dst, size_t dstlen)
-{
-    char* buffer = reinterpret_cast<char*>(dst);
-    std::ifstream stream("/dev/urandom", std::ios_base::binary | std::ios_base::in);
-    stream.read(buffer, dstlen);
-
-    return dstlen;
-}
-
 /**
  * Thread Function
+ *
+ * FIXME: `std::random_device` works poorly in Windows. We can simply
+ *        have the user "seed" (an integer), since this DOES NOT have
+ *        to be cryptographically secure.
  */
 void HybridMinisto::thr_func(CPUSolver& solver)
 {
     /* Initailize randomizer. */
     // FIXME: This is NOT working on Windows.
-    // std::random_device r;
-    // std::mt19937_64 gen(r());
-    // https://stackoverflow.com/questions/45069219/how-to-succinctly-portably-and-thoroughly-seed-the-mt19937-prng
-    std::uint_least32_t seed;
-    sysrandom(&seed, sizeof(seed));
-    std::mt19937 gen(seed);
+    std::random_device rd;
+
+    /* Generate new seed. */
+    int seed = rd();
+
+    /* Get current time. */
+    auto nowTime = std::chrono::system_clock::now();
+
+    /* Convert to seconds (since epoch). */
+    std::time_t epochTime = std::chrono::system_clock::to_time_t(nowTime);
+
+    {
+        /* Initialize (guarded) mutex. */
+        std::lock_guard<std::mutex> g(m_solution_mutex);
+
+        std::cout << "seed: " << seed << " | epochTime: " << epochTime << " | XOR: " << (seed ^ epochTime) << std::endl;
+    }
+
+    /* Initialize (Mersenne Twister) pseudo-random generator. */
+    std::mt19937_64 gen(seed);
+
+    /* Initialize uniform integer distribution. */
     std::uniform_int_distribution<> dist(0, 0xffffffff);
 
     /* Initialize solution. */
@@ -245,6 +243,9 @@ void HybridMinisto::thr_func(CPUSolver& solver)
         for (size_t i = 0; i < solution.size(); i += 4) {
             /* Initialize (temp) distribution. */
             uint32_t const tmp = dist(gen);
+
+            // std::cout << "what's here?" << std::endl;
+            // break;
 
             /* Calculate solution (from distribution). */
             solution[i]     = static_cast<uint8_t> (tmp & 0x000000ff);

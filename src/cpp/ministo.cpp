@@ -46,17 +46,13 @@ bool start(HybridMinisto* _hm)
     _hm->run();
 
     /* Get time now. */
-    nowTime = std::chrono::system_clock::now();
+    auto completeTime = std::chrono::system_clock::now();
 
-    /* Convert to seconds (since epoch). */
-    std::time_t endTime =
-        std::chrono::system_clock::to_time_t(nowTime);
-
-    /* Calculate the solve time. */
-    int solveTime = (endTime - startTime);
+    /* Calculate time difference (in seconds). */
+    std::chrono::duration<double> elapsedSeconds = completeTime - nowTime;
 
     /* Print to console (in machine format). */
-    std::cout << "[[NOTIFY]] [[SOLUTION]] " << _hm->solution() << ":" << solveTime << std::endl;
+    std::cout << "::NOTIFY:SOLUTION " << _hm->solution() << ":" << elapsedSeconds.count() << "s" << std::endl;
 
     /* Validate solution. */
     // NOTE: 32 bytes as a (0x) formatted string
