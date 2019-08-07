@@ -1,3 +1,4 @@
+// #include <algorithm>
 #include <iostream>
 #include <vector>
 
@@ -23,8 +24,10 @@ int main()
 
     int sum = 0;
 
-    std::for_each(myVecs.begin(), myVecs.end(),
-        [&](int x){ sum += x; });
+    // std::for_each(myVecs.begin(), myVecs.end(),
+    //     [&](int x){ sum += x; });
+    for (auto & vecs : myVecs)
+        sum += vecs;
 
     std::cout << "\nTotal sum is: " << sum << std::endl;
 
