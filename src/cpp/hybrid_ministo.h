@@ -42,6 +42,7 @@ class HybridMinisto
     private:
         /* Values. */
         int m_prngSeed;
+        int m_thr_cntr;
 
         /* Strings */
         std::string m_hardwareType;

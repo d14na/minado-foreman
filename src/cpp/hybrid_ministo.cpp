@@ -25,6 +25,7 @@ HybridMinisto::HybridMinisto() noexcept :
 
     /* Values. */
     m_prngSeed(0),
+    m_thr_cntr(0),
 
     /* Booleans */
     m_bSolutionFound(false),
@@ -209,12 +210,15 @@ void HybridMinisto::stop()
  */
 void HybridMinisto::thr_func(CPUSolver& solver)
 {
+    /* Initialize (generator) seed. */
+    int seed = 0;
+
     /* Initailize randomizer. */
     // FIXME: This is NOT working on Windows.
     std::random_device rd;
 
-    /* Generate new seed. */
-    int seed = rd();
+    /* Generate new random integer. */
+    int rndInt = rd();
 
     /* Get current time. */
     auto nowTime = std::chrono::system_clock::now();
@@ -226,7 +230,17 @@ void HybridMinisto::thr_func(CPUSolver& solver)
         /* Initialize (guarded) mutex. */
         std::lock_guard<std::mutex> g(m_solution_mutex);
 
-        std::cout << "seed: " << seed << " | epochTime: " << epochTime << " | XOR: " << (seed ^ epochTime) << std::endl;
+        /* Increment thread counter. */
+        m_thr_cntr++;
+
+        /* Calculate seed. */
+        seed = (rndInt ^ m_thr_cntr ^ epochTime);
+
+        std::cout << "rndInt: " << rndInt << " | "
+                  << "epochTime: " << epochTime << " | "
+                  << "m_thr_cntr: " << m_thr_cntr << " (XOR) "
+                  << "=> " << seed
+                  << std::endl;
     }
 
     /* Initialize (Mersenne Twister) pseudo-random generator. */
