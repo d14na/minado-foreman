@@ -29,8 +29,8 @@
 
 #include "sha3.h"
 
-void gpu_init();
-void runBenchmarks();
+// void gpu_init();
+// void runBenchmarks();
 
 char *read_in_messages();
 
@@ -55,7 +55,7 @@ const size_t str_length = 7;	//change for different sizes
 int gpu_blocksize = HARDCODED_BLOCKSIZE;
 int gpu_threadsize = HARDCODED_THREADSIZE;
 
-cudaEvent_t start, stop;
+// cudaEvent_t start, stop;
 
 #define ROTL64(x, y) (((x) << (y)) | ((x) >> (64 - (y))))
 

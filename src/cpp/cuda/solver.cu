@@ -247,8 +247,8 @@ CUDASolver::bytes_t CUDASolver::findSolution( )
     m_updated_gpu_inputs = false;
 
     /* Create CUDA events. */
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
+    // cudaEventCreate(&start);
+    // cudaEventCreate(&stop);
 
     printf("Target input:\n");
 
@@ -327,8 +327,8 @@ CUDASolver::bytes_t CUDASolver::findSolution( )
      }
 
      /* Destroy CUDA events. */
-     cudaEventDestroy(start);
-     cudaEventDestroy(stop);
+     // cudaEventDestroy(start);
+     // cudaEventDestroy(stop);
 
      /* Return solution. */
      return byte_solution;

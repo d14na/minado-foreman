@@ -15,7 +15,7 @@ class CUDASha3
         void gpu_init();
         void setCudaBlockSize(int blocksize);
         void setCudaThreadSize(int threadsize);
-        void runBenchmarks();
+        // void runBenchmarks();
 
         char *read_in_messages();
 
@@ -36,7 +36,7 @@ class CUDASha3
         const size_t str_length = 7; // change for different sizes
 
         /* CUDA events. */
-        cudaEvent_t start, stop;
+        // cudaEvent_t start, stop;
 };
 
 #endif // !_CUDASHA3_H_
