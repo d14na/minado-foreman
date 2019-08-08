@@ -66,7 +66,7 @@ HybridMinisto::~HybridMinisto()
 void HybridMinisto::setSeed(int const& prngSeed)
 {
     /* Print to console (in machine format). */
-    std::cout << "::SETTING:PRNG_SEED " << prngSeed << std::endl;
+    std::cout << "::SETTING:PRNG_SEED::" << prngSeed << "::" << std::endl;
 
     /* Set seed. */
     m_prngSeed = prngSeed;
@@ -80,7 +80,7 @@ void HybridMinisto::setSeed(int const& prngSeed)
 void HybridMinisto::setHardwareType(std::string const& hardwareType)
 {
     /* Print to console (in machine format). */
-    std::cout << "::SETTING:HARDWARE_TYPE " << hardwareType << std::endl;
+    std::cout << "::SETTING:HARDWARE_TYPE::" << hardwareType << "::" << std::endl;
 
     /* Set hardware type. */
     m_hardwareType = hardwareType;

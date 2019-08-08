@@ -49,7 +49,7 @@
         </div>
 
         <div class="activity-graph elevation-1" @click="testSpawn">
-            [ {{realtime}} ]
+            {{realtime}}
         </div>
     </div>
 </template>
@@ -280,8 +280,10 @@ export default {
 
             ps.stdout.on('data', (data) => {
                 // console.log('data', data)
-                console.log(data.toString())
-                this.realtime = data.toString()
+                // console.log(data.toString())
+
+                /* Parse the incoming data. */
+                this.parseData(data)
             });
 
             ps.stderr.on('data', (data) => {
@@ -326,6 +328,33 @@ export default {
             store.set('settings.tag', this.tag)
 
             ipc.send('_debug', `Ministo tag has been changed to [ ${this.tag} ]`)
+        },
+
+        parseData (_data) {
+            /* Initialize data. */
+            const data = _data.toString()
+
+            // console.log('INCOMING DATA', data)
+
+            if (data.slice(0, 2) === '::') {
+                // console.log('THIS IS A COMMAND', data)
+
+                let dataBreak = data.indexOf('::', 2)
+
+                const cmd = data.slice(2, dataBreak)
+
+                console.log('COMMAND', cmd)
+
+                let dataTerm = data.indexOf('::', dataBreak + 2)
+
+                const val = data.slice(dataBreak + 2, dataTerm)
+
+                console.log('VALUE', val)
+
+                this.realtime = `${cmd}\n${val.replace(/:/g, '\n')} (seconds)`
+
+                this.numLodes++
+            }
         },
 
         /* Update "native" miner parameters. */
@@ -507,10 +536,11 @@ export default {
     padding: 12px;
 
     color: white;
-    font-size: 1.2em;
+    font-size: 0.8em;
     font-weight: bold;
 
-    text-align: center;
+    text-align: left;
+    // text-align: center;
 
     background-color: rgba(45, 120, 220, 0.5);
     border: 1pt solid #333;

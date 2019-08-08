@@ -52,7 +52,7 @@ bool start(HybridMinisto* _hm)
     std::chrono::duration<double> elapsedSeconds = completeTime - nowTime;
 
     /* Print to console (in machine format). */
-    std::cout << "::NOTIFY:SOLUTION " << _hm->solution() << ":" << elapsedSeconds.count() << "s" << std::endl;
+    std::cout << "::NOTIFY:SOLUTION::" << _hm->solution() << ":" << elapsedSeconds.count() << "::" << std::endl;
 
     /* Validate solution. */
     // NOTE: 32 bytes as a (0x) formatted string
