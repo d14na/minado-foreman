@@ -300,6 +300,21 @@ void HybridMinisto::solutionFound(CPUSolver::bytes_t const& solution)
 }
 
 /**
+ * Hash (Rate) Check
+ */
+int HybridMinisto::hashCheck() const
+{
+    /* Retrieve number of hashes. */
+    uint32_t const num_hashes = CPUSolver::hashes;
+
+    /* Reset hash counter. */
+    CPUSolver::hashes = 0;
+
+    /* Return number of hashes. */
+    return num_hashes;
+}
+
+/**
  * (Return) Solution
  */
 std::string HybridMinisto::solution() const

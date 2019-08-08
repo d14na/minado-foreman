@@ -31,7 +31,8 @@ bool start(HybridMinisto* _hm)
         shiftStart = startTime;
     } else {
         if (startTime > shiftStart + MAX_SHIFT_DURATION) {
-            std::cout << "\n    *** Hey! It looks like your shift is all done. ***\n" << std::endl;
+            /* Print to console (in machine format). */
+            std::cout << "::NOTIFY:YOUR_SHIFT_IS_COMPLETE::" << std::endl;
 
             return 0;
         }
@@ -53,6 +54,11 @@ bool start(HybridMinisto* _hm)
 
     /* Print to console (in machine format). */
     std::cout << "::NOTIFY:SOLUTION::" << _hm->solution() << ":" << elapsedSeconds.count() << "::" << std::endl;
+
+    /* Retrieve number of hashes. */
+    // NOTE: Will also reset the counter.
+    int num_hashes = _hm->hashCheck();
+    std::cout << "::NOTIFY:HASHES::" << num_hashes << "::" << std::endl;
 
     /* Validate solution. */
     // NOTE: 32 bytes as a (0x) formatted string

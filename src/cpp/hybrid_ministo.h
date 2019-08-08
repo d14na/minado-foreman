@@ -36,6 +36,7 @@ class HybridMinisto
         void setThreadSize(std::string const& threadsize);
         void setHardwareType(std::string const& hardwareType);
 
+        int hashCheck() const;
         std::string solution() const;
 
     /* (Private) Variables. */

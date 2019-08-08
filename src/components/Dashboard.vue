@@ -332,28 +332,59 @@ export default {
 
         parseData (_data) {
             /* Initialize data. */
+            // NOTE: Data arrives as a buffer (from `cross-spawn`).
             const data = _data.toString()
 
             // console.log('INCOMING DATA', data)
 
-            if (data.slice(0, 2) === '::') {
-                // console.log('THIS IS A COMMAND', data)
+            /* Split the data into lines. */
+            const lines = data.split('\n')
 
-                let dataBreak = data.indexOf('::', 2)
+            /* Iterate through and parse each line of data. */
+            for (let line of lines) {
+                /* Validate line and look for command prefix. */
+                if (line !== '' && line.slice(0, 2) === '::') {
+                    // console.log('THIS IS A COMMAND', data)
 
-                const cmd = data.slice(2, dataBreak)
+                    /* Locate data break. */
+                    // Separates the `command` from the `value`.
+                    let dataBreak = line.indexOf('::', 2)
 
-                console.log('COMMAND', cmd)
+                    /* Parse the command. */
+                    const cmd = line.slice(2, dataBreak)
 
-                let dataTerm = data.indexOf('::', dataBreak + 2)
+                    // console.log('COMMAND', cmd)
 
-                const val = data.slice(dataBreak + 2, dataTerm)
+                    /* Locate data termination. */
+                    let dataTerm = line.indexOf('::', dataBreak + 2)
 
-                console.log('VALUE', val)
+                    /* Parse the value. */
+                    const val = line.slice(dataBreak + 2, dataTerm)
 
-                this.realtime = `${cmd}\n${val.replace(/:/g, '\n')} (seconds)`
+                    // console.log('VALUE', val)
 
-                this.numLodes++
+                    /* Handle commands. */
+                    switch (cmd) {
+                        case 'NOTIFY:HASHES':
+                            /* Update hash rate. */
+                            this.hashRate = val
+
+                            break
+                        case 'NOTIFY:SOLUTION':
+                            /* Update real-time data. */
+                            this.realtime = `${cmd}\n${val.replace(/:/g, '\n')} (seconds)`
+
+                            /* Increment number of lodes. */
+                            this.numLodes++
+
+                            break
+                        default:
+                            /* Update real-time data. */
+                            this.realtime = `${cmd}\n${val}`
+
+                            // TODO Add remaining handlers.
+                    }
+                }
             }
         },
 
