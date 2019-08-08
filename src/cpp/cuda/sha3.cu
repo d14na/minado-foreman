@@ -1,21 +1,20 @@
-/*
-Author: Mikers
-date march 4, 2018 for 0xbitcoin dev
+/*******************************************************************************
+ * Author: Brian Bowden
+ * Date: 5/12/14
+ *
+ * This is the parallel version of SHA-3.
+ *
+ * Author: Mikers
+ * Date: March 4, 2018
+ * Purpose: For 0xbitcoin development.
+ * (based off of https://github.com/Dunhili/SHA3-gpu-brute-force-cracker/blob/master/sha3.cu)
+ */
 
-based off of https://github.com/Dunhili/SHA3-gpu-brute-force-cracker/blob/master/sha3.cu
-
-* Author: Brian Bowden
-* Date: 5/12/14
-*
-* This is the parallel version of SHA-3.
-*/
-
-// magic numbers we need to tune
+/* TODO: These magic numbers need tuning. */
 #define LOOP_IN_GPU_OPTIMIZATION 1000
 #define HARDCODED_BLOCKSIZE 256
 #define HARDCODED_THREADSIZE 256
 
-// magic numbers we need to tune
 #if !defined(_WIN32)
 #include <unistd.h>
 #endif
@@ -89,15 +88,22 @@ __device__ const int piln[24] = {
  *
  * NOTE: Device ONLY.
  */
-__device__ int compare_hash(unsigned char *target, unsigned char *hash, int length)
+__device__ int compare_hash(
+    unsigned char *target,
+    unsigned char *hash,
+    int length)
 {
+    /* Initialize index. */
 	int i = 0;
 
+    /* Loop through bytes, until non-matching bytes are found. */
 	for (i = 0; i < length; i++) {
 		if (hash[i] != target[i])
             break;
 	}
 
+    /* Compare the bytes. */
+    // NOTE: Must be LESS THAN the target.
     return (unsigned char)(hash[i]) < (unsigned char)(target[i]);
 }
 
@@ -112,19 +118,13 @@ __device__ void keccak256(uint64_t state[25])
 	int j;
 
     for (int i = 0; i < 24; i++) {
-        // Theta
-		// for i = 0 to 5
-		//    C[i] = state[i] ^ state[i + 5] ^ state[i + 10] ^ state[i + 15] ^ state[i + 20];
+    // Theta
 		C[0] = state[0] ^ state[5] ^ state[10] ^ state[15] ^ state[20];
 		C[1] = state[1] ^ state[6] ^ state[11] ^ state[16] ^ state[21];
 		C[2] = state[2] ^ state[7] ^ state[12] ^ state[17] ^ state[22];
 		C[3] = state[3] ^ state[8] ^ state[13] ^ state[18] ^ state[23];
 		C[4] = state[4] ^ state[9] ^ state[14] ^ state[19] ^ state[24];
 
-		// for i = 0 to 5
-		//     temp = C[(i + 4) % 5] ^ ROTL64(C[(i + 1) % 5], 1);
-		//     for j = 0 to 25, j += 5
-		//          state[j + i] ^= temp;
 		temp = C[4] ^ ROTL64(C[1], 1);
 		state[0] ^= temp;
 		state[5] ^= temp;
@@ -160,12 +160,7 @@ __device__ void keccak256(uint64_t state[25])
 		state[19] ^= temp;
 		state[24] ^= temp;
 
-        // Rho Pi
-		// for i = 0 to 24
-		//     j = piln[i];
-		//     C[0] = state[j];
-		//     state[j] = ROTL64(temp, r[i]);
-		//     temp = C[0];
+    // Rho Pi
 		temp = state[1];
 		j = piln[0];
 		C[0] = state[j];
@@ -287,12 +282,7 @@ __device__ void keccak256(uint64_t state[25])
 		state[j] = ROTL64(temp, r[23]);
 		temp = C[0];
 
-        //  Chi
-		// for j = 0 to 25, j += 5
-		//     for i = 0 to 5
-		//         C[i] = state[j + i];
-		//     for i = 0 to 5
-		//         state[j + 1] ^= (~C[(i + 1) % 5]) & C[(i + 2) % 5];
+    // Chi
 		C[0] = state[0];
 		C[1] = state[1];
 		C[2] = state[2];
@@ -353,7 +343,7 @@ __device__ void keccak256(uint64_t state[25])
 		state[23] ^= (~C[4]) & C[0];
 		state[24] ^= (~C[0]) & C[1];
 
-        //  Iota
+    // Iota
         state[0] ^= RC[i];
     }
 }
@@ -363,7 +353,11 @@ __device__ void keccak256(uint64_t state[25])
  *
  * NOTE: Device ONLY.
  */
-__device__ void keccak(const char *message, int message_len, unsigned char *output, int output_len)
+__device__ void keccak(
+    const char *message,
+    int message_len,
+    unsigned char *digest,
+    int digest_len)
 {
     uint64_t state[25];
     uint8_t temp[144];
@@ -395,7 +389,7 @@ __device__ void keccak(const char *message, int message_len, unsigned char *outp
 
     keccak256(state);
 
-    memcpy(output, state, output_len);
+    memcpy(digest, state, digest_len);
 }
 
 /**
@@ -406,14 +400,25 @@ __device__ void keccak(const char *message, int message_len, unsigned char *outp
  *
  * NOTE: Hash length is 256 bits.
  */
-__global__ void gpu_mine(char * working_memory_hash, char * working_memory_nonce, unsigned char *challenge_hash, char * device_solution, int *done, const unsigned char * hash_prefix,int now, int cnt)
+__global__ void gpu_mine(
+    char * working_memory_hash,
+    char * working_memory_nonce,
+    unsigned char *challenge_hash,
+    char * device_solution,
+    int *done,
+    const unsigned char * hash_prefix,
+    int now,
+    int cnt)
 {
+    /* Create a new thread id. */
     int tid = threadIdx.x + (blockIdx.x * blockDim.x);
 
-    char * message = &working_memory_nonce[84*tid];
+    char * message = &working_memory_nonce[84 * tid];
 
-    char * hash =&working_memory_hash[32*(tid)];
+    char * hash = &working_memory_hash[32 * tid];
 
+    /* Initialize string length. */
+    // NOTE: This is challenge[32] + address[20] + nonce[32].
     int str_len = 84;
 
     curandState_t state;
@@ -423,30 +428,40 @@ __global__ void gpu_mine(char * working_memory_hash, char * working_memory_nonce
 
     int len = 0;
 
-    for(len = 0 ; len < 52; len++){
+    for (len = 0; len < 52; len++) {
 		message[len] = hash_prefix[len];
 	}
 
     for (int i = 0; i < LOOP_IN_GPU_OPTIMIZATION; i++) {
+        /* Generate a new nonce. */
         for (len = 0; len < 32; len++) {
+            /* Generate random byte. */
             char r = (char)curand(&state) % 256;
 
+            /* Add byte to message. */
             message[52 + len] = r;
         }
 
-        const int output_len = 32;
+        /* Initialize digest length. */
+        const int digest_len = 32;
 
-        unsigned char output[output_len];
+        /* Initialize digest. */
+        unsigned char digest[digest_len];
 
-        keccak(&message[0], str_len, &output[0], output_len);
+        /* Perform keccak (on the message). */
+        keccak(&message[0], str_len, &digest[0], digest_len);
 
-        if (compare_hash(&challenge_hash[0], &output[0], output_len)) {
+        /* Validate our solution (is less than target). */
+        if (compare_hash(&challenge_hash[0], &digest[0], digest_len)) {
             if (done[0] != 1) {
+                /* Set flag. */
                 done[0] = 1;
 
+                /* Copy the solution. */
                 memcpy(device_solution, message, str_len);
             }
 
+            /* Exit. */
             return;
         }
     }
@@ -457,6 +472,7 @@ __global__ void gpu_mine(char * working_memory_hash, char * working_memory_nonce
  */
 void stop_solving()
 {
+    /* Set flag. */
     h_done[0] = 1 ;
 }
 
@@ -506,6 +522,9 @@ void gpu_init()
     clock_speed = (int) (device_prop.memoryClockRate * 1000 * 1000);    // convert from GHz to hertz
 }
 
+/**
+ * Greatest Common Denominator
+ */
 int gcd(int a, int b) {
     return (a == 0) ? b : gcd(b % a, a);
 }
@@ -530,7 +549,9 @@ void resetHashCount() {
  * Initializes hashing variables on the device; then copies data
  * from host memory to the device memory.
  */
-void update_mining_inputs(const char * challenge_target, const char * hash_prefix) // can accept challenge
+void update_mining_inputs(
+    const char * challenge_target,
+    const char * hash_prefix) // can accept challenge
 {
     /* Initialize device variables. */
     int *d_done;
@@ -554,7 +575,9 @@ void update_mining_inputs(const char * challenge_target, const char * hash_prefi
 /**
  * Find Message
  */
-unsigned char * find_message(const char * challenge_target, const char * hash_prefix) // can accept challenge
+unsigned char * find_message(
+    const char * challenge_target,
+    const char * hash_prefix) // can accept challenge
 {
     /* Initialize done. */
     h_done[0] = 0;
@@ -577,19 +600,17 @@ unsigned char * find_message(const char * challenge_target, const char * hash_pr
     cudaMemcpy(d_hash_prefix, hash_prefix, 52, cudaMemcpyHostToDevice);
 
     /* Set CUDA thread limit. */
-    // cudaThreadSetLimit(cudaLimitMallocHeapSize,
-    //     2 * (84 * number_blocks * number_threads + 32 * number_blocks * number_threads));
     cudaThreadSetLimit(cudaLimitMallocHeapSize,
         2 * ((84 * number_blocks * number_threads) + (32 * number_blocks * number_threads)));
 
     /* Initialze (count of) workers. */
     unsigned int workers = number_blocks * number_threads;
 
-    /* Initialize managed memory hash. */
+    /* Initialize (managed) memory hash. */
     char * working_memory_hash;
     cudaMallocManaged(&working_memory_hash, workers * 32);
 
-    /* Initialize managed memory nonce. */
+    /* Initialize (managed) memory nonce. */
     char * working_memory_nonce;
     cudaMallocManaged(&working_memory_nonce, workers * 84);
 
@@ -652,7 +673,7 @@ unsigned char * find_message(const char * challenge_target, const char * hash_pr
     fp = fopen ("out.binary", "wb") ;
 
     /* Write message. */
-    fwrite(h_message , 84, 1 , fp);
+    fwrite(h_message, 84, 1, fp);
 
     /* Close file. */
     fclose(fp);

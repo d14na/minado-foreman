@@ -51,7 +51,7 @@ class CUDASolver
         static std::string hexStr(char* data, int len);
         static bool lte(bytes_t const& left, bytes_t const& right);
 
-        bool requiresRestart();
+        // bool requiresRestart();
 
     /* (Private) Variables. */
     private:

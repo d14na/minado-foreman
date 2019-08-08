@@ -88,6 +88,7 @@ void CUDASolver::setTarget(std::string const& target)
      * only when a change occurs.
      */
     {
+        /* Initialize (guarded) mutex. */
         std::lock_guard<std::mutex> g(m_target_mutex);
 
         /* Convert from hex to bytes. */
@@ -127,10 +128,10 @@ void CUDASolver::setThreadSize(int size)
 /**
  * Requires Restart
  */
-bool CUDASolver::requiresRestart()
-{
-    return m_updated_gpu_inputs;
-}
+// bool CUDASolver::requiresRestart()
+// {
+//     return m_updated_gpu_inputs;
+// }
 
 /**
  * Update GPU Loop
