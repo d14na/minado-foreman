@@ -35,11 +35,11 @@
 
             <div class="right-side">
                 <div>
-                    Hash Rate: <span class="red--text">{{hashRate}}</span>
+                    Hash Rate: <span class="red--text">{{hashRateDisplay}}</span>
                 </div>
 
                 <div>
-                    # Hashes: {{numHashes}}
+                    # Hashes: {{numHashesDisplay}}
                 </div>
 
                 <div>
@@ -56,6 +56,7 @@
 
 <script>
 /* Import libraries. */
+import moment from 'moment'
 import numeral from 'numeral'
 import Store from 'electron-store'
 import SockJS from 'sockjs-client'
@@ -97,8 +98,9 @@ export default {
 
         realtime: 'REAL-TIME ACTIVITY GRAPH',
 
-        hashRate: 'n/a',
-        numHashes: 0,
+        hashStartTime: 0,
+        hashRate: web3Utils.toBN(0), // this is a BigNumber
+        numHashes: web3Utils.toBN(0), // this is a BigNumber
         numLodes: 0,
 
         avatarSize: 64,
@@ -123,6 +125,59 @@ export default {
         emailAddress () {
             return this.email
             // return this.$store.state.Profile.email
+        },
+        hashRateDisplay () {
+            /* Initialize big number constants. */
+            const bnTril = web3Utils.toBN(1000000000000)
+            const bnBil = web3Utils.toBN(1000000000)
+            const bnMil = web3Utils.toBN(1000000)
+            const bnThou = web3Utils.toBN(1000)
+
+            /* Initialize "decimal" multiplier. */
+            const mult = web3Utils.toBN(100)
+
+            /* Validate hash rate. */
+            if (this.hashRate.isZero())
+                return 'n/a'
+
+            /* Initialize a decimal hash rate. */
+            // NOTE: 2 orders of magnitude added for decimal calculation.
+            let hashRateDecimal = this.hashRate.mul(mult)
+
+            /* Parse the number (based on number of digits). */
+            if (hashRateDecimal.gt(bnTril.mul(mult)))
+                return (hashRateDecimal.div(bnTril)) / 100.0 + 'T/s'
+            else if (hashRateDecimal.gt(bnBil.mul(mult)))
+                return (hashRateDecimal.div(bnBil)) / 100.0 + 'B/s'
+            else if (hashRateDecimal.gt(bnMil.mul(mult)))
+                return (hashRateDecimal.div(bnMil)) / 100.0 + 'M/s'
+            else if (hashRateDecimal.gt(bnThou.mul(mult)))
+                return (hashRateDecimal.div(bnThou)) / 100.0 + 'k/s'
+            else
+                return hashRateDecimal / 100.0 + '/s'
+        },
+        numHashesDisplay () {
+            /* Initialize big number constants. */
+            const bnTril = web3Utils.toBN(1000000000000)
+            const bnBil = web3Utils.toBN(1000000000)
+            const bnMil = web3Utils.toBN(1000000)
+            const bnThou = web3Utils.toBN(1000)
+
+            /* Validate number of hashes. */
+            if (this.numHashes.isZero())
+                return 'n/a'
+
+            /* Parse the number (based on number of digits). */
+            if (this.numHashes.gt(bnTril))
+                return (this.numHashes.div(bnTril)) + 'T'
+            else if (this.numHashes.gt(bnBil))
+                return (this.numHashes.div(bnBil)) + 'B'
+            else if (this.numHashes.gt(bnMil))
+                return (this.numHashes.div(bnMil)) + 'M'
+            else if (this.numHashes.gt(bnThou))
+                return (this.numHashes.div(bnThou)) + 'k'
+            else
+                return this.numHashes
         },
         numLodesDisplay () {
             return numeral(this.numLodes).format('0,0')
@@ -276,6 +331,9 @@ export default {
         testSpawn () {
             const spawn = require('cross-spawn')
 
+            /* Set hashing start time. */
+            this.hashStartTime = moment().unix()
+
             const ps = spawn('./bin/ministo')
 
             ps.stdout.on('data', (data) => {
@@ -366,8 +424,19 @@ export default {
                     /* Handle commands. */
                     switch (cmd) {
                         case 'NOTIFY:HASHES':
+                            /* Convert to a big number. */
+                            let hashes = web3Utils.toBN(val)
+
+                            /* Add to total hashes. */
+                            this.numHashes = this.numHashes.add(hashes)
+
+                            let bnSecondsElapsed = web3Utils.toBN(
+                                moment().unix() - this.hashStartTime)
+
+                            let hashRate = this.numHashes.div(bnSecondsElapsed)
+
                             /* Update hash rate. */
-                            this.hashRate = val
+                            this.hashRate = hashRate
 
                             break
                         case 'NOTIFY:SOLUTION':

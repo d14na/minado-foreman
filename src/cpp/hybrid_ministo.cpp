@@ -129,7 +129,7 @@ void HybridMinisto::setBlockSize(std::string const& blocksize)
 {
     std::cout << "Setting block size: [ " << blocksize << " ]\n";
 
-    // int i = stoi(blocksize);
+    int i = stoi(blocksize);
 
     // cudaSolver.setBlockSize(i);
 }
@@ -141,7 +141,7 @@ void HybridMinisto::setThreadSize(std::string const& threadsize)
 {
     std::cout << "Setting thread size: " << threadsize << "\n";
 
-    // int i = stoi(threadsize);
+    int i = stoi(threadsize);
 
     // cudaSolver.setThreadSize(i);
 }
