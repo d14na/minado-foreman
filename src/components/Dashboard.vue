@@ -134,7 +134,7 @@ export default {
             const bnThou = web3Utils.toBN(1000)
 
             /* Initialize "decimal" multiplier. */
-            const mult = web3Utils.toBN(100)
+            const mult = web3Utils.toBN(100) // to one-hundreth
 
             /* Validate hash rate. */
             if (this.hashRate.isZero())
@@ -163,21 +163,28 @@ export default {
             const bnMil = web3Utils.toBN(1000000)
             const bnThou = web3Utils.toBN(1000)
 
+            /* Initialize "decimal" multiplier. */
+            const mult = web3Utils.toBN(10) // to one-tenth
+
             /* Validate number of hashes. */
             if (this.numHashes.isZero())
                 return 'n/a'
 
+                /* Initialize a decimal hash rate. */
+                // NOTE: 2 orders of magnitude added for decimal calculation.
+                let numHashesDecimal = this.numHashes.mul(mult)
+
             /* Parse the number (based on number of digits). */
-            if (this.numHashes.gt(bnTril))
-                return (this.numHashes.div(bnTril)) + 'T'
-            else if (this.numHashes.gt(bnBil))
-                return (this.numHashes.div(bnBil)) + 'B'
-            else if (this.numHashes.gt(bnMil))
-                return (this.numHashes.div(bnMil)) + 'M'
-            else if (this.numHashes.gt(bnThou))
-                return (this.numHashes.div(bnThou)) + 'k'
+            if (numHashesDecimal.gt(bnTril.mul(mult)))
+                return (numHashesDecimal.div(bnTril)) / 10.0 + 'T'
+            else if (numHashesDecimal.gt(bnBil.mul(mult)))
+                return (numHashesDecimal.div(bnBil)) / 10.0 + 'B'
+            else if (numHashesDecimal.gt(bnMil.mul(mult)))
+                return (numHashesDecimal.div(bnMil)) / 10.0 + 'M'
+            else if (numHashesDecimal.gt(bnThou.mul(mult)))
+                return (numHashesDecimal.div(bnThou)) / 10.0 + 'k'
             else
-                return this.numHashes
+                return numHashesDecimal.toNumber()
         },
         numLodesDisplay () {
             return numeral(this.numLodes).format('0,0')
