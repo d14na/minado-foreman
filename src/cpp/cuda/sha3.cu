@@ -103,8 +103,8 @@ __device__ int compare_hash(
 	}
 
     /* Compare the bytes. */
-    // NOTE: Must be LESS THAN the target.
-    return (unsigned char)(hash[i]) < (unsigned char)(target[i]);
+    // NOTE: Must be LESS THAN OR EQUAL to the target.
+    return (unsigned char)(hash[i]) <= (unsigned char)(target[i]);
 }
 
 /**

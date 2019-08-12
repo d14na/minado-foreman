@@ -32,9 +32,9 @@ bool start(HybridMinisto* _hm)
     } else {
         if (startTime > shiftStart + MAX_SHIFT_DURATION) {
             /* Print to console (in machine format). */
-            std::cout << "::NOTIFY:YOUR_SHIFT_IS_COMPLETE::" << std::endl;
+            // std::cout << "::NOTIFY:YOUR_SHIFT_IS_COMPLETE::" << std::endl;
 
-            return 0;
+            // return 0;
         }
     }
 
@@ -87,11 +87,26 @@ int main(int argc, char* argv[])
 
     /* Validate miner. */
     if (hybrid_ministo) {
-        /* Handle first parameter (TARGET). */
+        /* Handle first parameter (CHALLENGE). */
         if (argc > 1) {
             /* Validate user input. */
             if (std::string(argv[1]) != "")
-                mTarget = argv[1];
+                mChallenge = argv[1];
+        }
+
+        /* Valdiate challenge. */
+        if (mChallenge == "") {
+            throw std::runtime_error("You MUST provide a 'Challenge Number' to continue.");
+        }
+
+        /* Set challenge. */
+        hybrid_ministo->setChallenge(mChallenge);
+
+        /* Handle second parameter (TARGET). */
+        if (argc > 2) {
+            /* Validate user input. */
+            if (std::string(argv[2]) != "")
+                mTarget = argv[2];
         }
 
         if (mTarget == "") {
@@ -103,22 +118,6 @@ int main(int argc, char* argv[])
         /* Set target. */
         hybrid_ministo->setTarget(mTarget);
 
-        /* Handle second parameter (CHALLENGE). */
-        if (argc > 2) {
-            /* Validate user input. */
-            if (std::string(argv[2]) != "")
-                mChallenge = argv[2];
-        }
-
-        /* Valdiate challenge. */
-        if (mChallenge == "") {
-            // FOR TESTING PURPOSES ONLY
-            mChallenge = "0xc9ee65260340367d976a99c4b77ce5f3a52d70cb5949b5c0066a9d9f7eb340e8";
-        }
-
-        /* Set challenge. */
-        hybrid_ministo->setChallenge(mChallenge);
-
         /* Handle third parameter (HARDWARE TYPE). */
         if (argc > 3) {
             /* Validate user input. */
@@ -127,6 +126,7 @@ int main(int argc, char* argv[])
         }
 
         if (mHardwareType == "") {
+            /* Set default. */
             mHardwareType = "cpu"; // valid are: cpu, cuda or opencl
         }
 

@@ -39,7 +39,7 @@
                 </div>
 
                 <div>
-                    # Hashes: {{numHashesDisplay}}
+                    # Hashes: {{totalHashesDisplay}}
                 </div>
 
                 <div>
@@ -48,7 +48,7 @@
             </div>
         </div>
 
-        <div class="activity-graph elevation-1" @click="testSpawn">
+        <div class="activity-graph elevation-1">
             {{realtime}}
         </div>
     </div>
@@ -71,9 +71,6 @@ const store = new Store()
 /* Import package.json. */
 const pjson = require('../../package.json')
 
-/* Initialize "hybrid" ministo. */
-// const HybridMinisto = require('../../build/Release/hybrid_ministo.node')
-
 /* Initialize Minado.Network endpoint. */
 // const MINADO_NETWORK_URL = 'ws://asia.minado.network'
 const MINADO_NETWORK_URL = 'http://asia.minado.network'
@@ -81,14 +78,14 @@ const MINADO_NETWORK_URL = 'http://asia.minado.network'
 
 /* Initailize constants. */
 const PRINT_STATS_TIMEOUT = 5000
-
 const UINT256_LENGTH = 32
 
 let GPUMiner = null // eslint-disable-line no-unused-vars
 
 export default {
     data: () => ({
-        ws: null, // WebSocket
+        ws: null, // websocket
+        ps: null, // system process
 
         isMining: false,
         minadoAddress: '',
@@ -100,7 +97,8 @@ export default {
 
         hashStartTime: 0,
         hashRate: web3Utils.toBN(0), // this is a BigNumber
-        numHashes: web3Utils.toBN(0), // this is a BigNumber
+        lastHashes: web3Utils.toBN(0), // this is a BigNumber
+        totalHashes: web3Utils.toBN(0), // this is a BigNumber
         numLodes: 0,
 
         avatarSize: 64,
@@ -156,7 +154,7 @@ export default {
             else
                 return hashRateDecimal / 100.0 + '/s'
         },
-        numHashesDisplay () {
+        totalHashesDisplay () {
             /* Initialize big number constants. */
             const bnTril = web3Utils.toBN(1000000000000)
             const bnBil = web3Utils.toBN(1000000000)
@@ -167,24 +165,24 @@ export default {
             const mult = web3Utils.toBN(10) // to one-tenth
 
             /* Validate number of hashes. */
-            if (this.numHashes.isZero())
+            if (this.totalHashes.isZero())
                 return 'n/a'
 
                 /* Initialize a decimal hash rate. */
                 // NOTE: 2 orders of magnitude added for decimal calculation.
-                let numHashesDecimal = this.numHashes.mul(mult)
+                let totalHashesDecimal = this.totalHashes.mul(mult)
 
             /* Parse the number (based on number of digits). */
-            if (numHashesDecimal.gt(bnTril.mul(mult)))
-                return (numHashesDecimal.div(bnTril)) / 10.0 + 'T'
-            else if (numHashesDecimal.gt(bnBil.mul(mult)))
-                return (numHashesDecimal.div(bnBil)) / 10.0 + 'B'
-            else if (numHashesDecimal.gt(bnMil.mul(mult)))
-                return (numHashesDecimal.div(bnMil)) / 10.0 + 'M'
-            else if (numHashesDecimal.gt(bnThou.mul(mult)))
-                return (numHashesDecimal.div(bnThou)) / 10.0 + 'k'
+            if (totalHashesDecimal.gt(bnTril.mul(mult)))
+                return (totalHashesDecimal.div(bnTril)) / 10.0 + 'T'
+            else if (totalHashesDecimal.gt(bnBil.mul(mult)))
+                return (totalHashesDecimal.div(bnBil)) / 10.0 + 'B'
+            else if (totalHashesDecimal.gt(bnMil.mul(mult)))
+                return (totalHashesDecimal.div(bnMil)) / 10.0 + 'M'
+            else if (totalHashesDecimal.gt(bnThou.mul(mult)))
+                return (totalHashesDecimal.div(bnThou)) / 10.0 + 'k'
             else
-                return numHashesDecimal.toNumber()
+                return totalHashesDecimal.toNumber()
         },
         numLodesDisplay () {
             return numeral(this.numLodes).format('0,0')
@@ -241,7 +239,7 @@ export default {
                     // NOTE: Broadcast to all miners.
                     if (action === 'notify') {
                         /* Stop the miner. */
-                        // HybridMinisto.stop()
+                        this.stopWorker()
 
                         /* Give it a sec. */
                         setTimeout(() => {
@@ -251,7 +249,7 @@ export default {
                             this.minadoTarget = data.target
 
                             /* Start the miner. */
-                            this.mine()
+                            this.startWorker()
                         }, 1000)
                     }
 
@@ -260,14 +258,14 @@ export default {
                         /* Validate running instance. */
                         if (!this.isMining) {
                             /* Start the miner. */
-                            this.mine()
+                            this.startWorker()
                         }
                     }
 
                     /* Stop mining. */
                     if (action === 'stop_mining' && data.tag === this.tag) {
                         /* Stop the miner. */
-                        // HybridMinisto.stop()
+                        this.stopWorker()
                     }
                 }
             }
@@ -277,56 +275,24 @@ export default {
 
                 /* Try to reconnect after 10 seconds. */
                 setTimeout(() => {
-                    console.log('Trying to re-connect...')
+                    console.log('Trying to re-connect..')
 
                     /* Re-initialize. */
                     this.init()
                 }, 10000)
             }
 
-            /* Initialize CPU Miner listener. */
-            ipc.on('startMining', () => {
-                this.mine()
-            })
-
             /* Initialize change tag listener. */
             ipc.on('changeTag', () => {
                 this.changeTag()
             })
 
-            /* Initialize change tag listener. */
-            // FIXME: Why do we need to call this thru here??
-            ipc.on('openDevTools', () => {
-                ipc.send('openDevTools')
-            })
-
-            /* Initialize hash update listener. */
-            ipc.on('updateNumHashes', (_event, _arg) => {
-                if (_event) {
-                    this.numHashes = _arg
-                }
-                // ipc.send('_debug', `this.numHashes [ ${this.numHashes} ]`)
-            })
-
-            /* Initialize hash update listener. */
-            ipc.on('updateHashRate', (_event, _arg) => {
-                if (_event) {
-                    this.hashRate = _arg
-                }
-                // ipc.send('_debug', `this.hashRate [ ${this.hashRate} ]`)
-            })
-
-            /* Set an interval to update mining stats. */
-            // setInterval(
-            //     () => { this.printMiningStats() }, PRINT_STATS_TIMEOUT
-            // )
-
             /* Handle (process) exit. */
             process.on('exit', () => {
-                console.log('Process exiting... stopping miner')
+                console.log('Process exiting .. Stopping miner.')
 
                 /* Stop the CPU miner. */
-                // HybridMinisto.stop()
+                this.stopWorker()
             })
         },
 
@@ -335,31 +301,48 @@ export default {
             this.$electron.shell.openExternal(link)
         },
 
-        testSpawn () {
+        startWorker () {
+            /* Initialize cross spawn. */
             const spawn = require('cross-spawn')
 
             /* Set hashing start time. */
             this.hashStartTime = moment().unix()
 
-            const ps = spawn('./bin/ministo')
+            // FOR TESTING PURPOSES ONLY
+            // let challenge = '0xc9ee65260340367d976a99c4b77ce5f3a52d70cb5949b5c0066a9d9f7eb340e8'
 
-            ps.stdout.on('data', (data) => {
-                // console.log('data', data)
+            /* Spawn new instance. */
+            this.ps = spawn('./bin/ministo', [this.minadoChallenge, this.minadoTarget])
+
+            /* Handle (incoming) data. */
+            this.ps.stdout.on('data', (data) => {
                 // console.log(data.toString())
 
                 /* Parse the incoming data. */
                 this.parseData(data)
-            });
+            })
 
-            ps.stderr.on('data', (data) => {
-                console.log(`ps stderr: ${data}`);
-            });
+            /* Handle data errors. */
+            this.ps.stderr.on('data', (data) => {
+                console.log(`ps stderr: ${data}`)
+            })
 
-            ps.on('close', (code) => {
+            /* Handle (worker) close. */
+            this.ps.on('close', (code) => {
                 if (code !== 0) {
-                    console.log(`ps process exited with code ${code}`);
+                    console.log(`Process exited with code [ ${code} ]`)
                 }
-            });
+            })
+        },
+
+        stopWorker () {
+            if (this.ps) {
+                /* Terminate the process. */
+                this.ps.kill('SIGTERM')
+
+                /* Update display. */
+                this.realtime = 'Worker has stopped!'
+            }
         },
 
         /* Retrieve the current tag. */
@@ -396,6 +379,11 @@ export default {
         },
 
         parseData (_data) {
+            /* Validate data. */
+            if (!_data) {
+                return console.error('The `parseData` you sent is invalid!')
+            }
+
             /* Initialize data. */
             // NOTE: Data arrives as a buffer (from `cross-spawn`).
             const data = _data.toString()
@@ -434,13 +422,16 @@ export default {
                             /* Convert to a big number. */
                             let hashes = web3Utils.toBN(val)
 
+                            /* Add to last hashes. */
+                            this.lastHashes = this.lastHashes.add(hashes)
+
                             /* Add to total hashes. */
-                            this.numHashes = this.numHashes.add(hashes)
+                            this.totalHashes = this.totalHashes.add(hashes)
 
                             let bnSecondsElapsed = web3Utils.toBN(
                                 moment().unix() - this.hashStartTime)
 
-                            let hashRate = this.numHashes.div(bnSecondsElapsed)
+                            let hashRate = this.totalHashes.div(bnSecondsElapsed)
 
                             /* Update hash rate. */
                             this.hashRate = hashRate
@@ -450,8 +441,21 @@ export default {
                             /* Update real-time data. */
                             this.realtime = `${cmd}\n${val.replace(/:/g, '\n')} (seconds)`
 
-                            /* Increment number of lodes. */
-                            this.numLodes++
+                            /* Parse out the solution. */
+                            let solution = val.split(':')[0]
+
+                            /* Validate solution. */
+                            if (solution.length === 66) {
+                                /* Verify and submit solution. */
+                                this.verifyAndSubmit(solution)
+
+                                // FOR TESTING PURPOSES ONLY
+                                // if (this.numLodes > 5)
+                                //     this.stopWorker()
+                            } else {
+                                console.error(`[ ${solution} ] failed to validate.`)
+                                // TODO Handle error!
+                            }
 
                             break
                         default:
@@ -464,116 +468,63 @@ export default {
             }
         },
 
-        /* Update "native" miner parameters. */
-        // updateHybridMinisto () {
-        //     // ipc.send('_debug', `updateHybridMinisto - ${this.minadoAddress} | ${this.minadoChallenge} | ${this.minadoTarget}`)
-        //
-        //     /* Set hardware type. */
-        //     // NOTE: Allowed values are either `cpu` or `cuda`.
-        //     // FIXME: Auto-detect CUDA GPU compatiblity.
-        //     HybridMinisto.setHardwareType('cpu')
-        //
-        //     /* Set minter's address. */
-        //     HybridMinisto.setMinterAddress(this.minadoAddress)
-        //
-        //     /* Validate challenge (number). */
-        //     // NOTE: `ethers..toHexString()` is truncating `00` from prefix.
-        //     if (this.minadoChallenge.length !== UINT256_LENGTH * 2 + 2) {
-        //         throw new Error(`Challenge length is incorrect [ ${this.minadoChallenge} ]`)
-        //     }
-        //
-        //     /* Set challenge (number). */
-        //     HybridMinisto.setChallenge(this.minadoChallenge)
-        //
-        //     /* Validate (difficulty) target. */
-        //     // NOTE: `ethers..toHexString()` is truncating `00` from prefix.
-        //     // if (this.minadoTarget.length !== UINT256_LENGTH * 2 + 2) {
-        //     //     throw new Error(`Target length is incorrect [ ${this.minadoTarget} ]`)
-        //     // }
-        //
-        //     /* Set (difficulty) target. */
-        //     HybridMinisto.setTarget(this.minadoTarget)
-        // },
+        verifyAndSubmit (_solution) {
+            console.log('START VERIFICATION')
 
-        /* Hybrid miner. */
-        mine () {
-            ipc.send('_debug', `Ministo has started mining..`)
+            /* Build digest hash. */
+            const digest = web3Utils.soliditySha3(
+                this.minadoChallenge,
+                this.minadoAddress,
+                _solution
+            )
 
-            // ipc.send('_debug', `TARGET [ ${this.minadoTarget} ]`)
-            // ipc.send('_debug', `DIFFICULTY [ ${this.minadoDifficulty} ]`)
+            /* Calculate (big number) digest. */
+            const digestBN = web3Utils.toBN(digest)
 
-            const _verifyAndSubmit = (_solution) => {
-                // ipc.send('_debug', `SOLUTION NUMBER [ ${_solution} ]`)
+            /* Calculate (big number) target. */
+            const targetBN = web3Utils.toBN(this.minadoTarget)
 
-                /* Build digest hash. */
-                const digest = web3Utils.soliditySha3(
-                    this.minadoChallenge,
-                    this.minadoAddress,
-                    _solution
-                )
+            if (digestBN.lte(targetBN)) {
+                console.log(`Submit mined solution [ ${_solution} ] for challenge [ ${this.minadoChallenge} ] with digest [ ${digest} ]`)
 
-                /* Calculate (big number) digest. */
-                const digestBN = web3Utils.toBN(digest)
+                /* Set last hashes. */
+                let lastHashes = this.lastHashes.toString()
 
-                /* Calculate (big number) target. */
-                const targetBN = web3Utils.toBN(this.minadoTarget)
+                /* Reset last hashes. */
+                this.lastHashes = web3Utils.toBN(0)
 
-                if (digestBN.lte(targetBN)) {
-                    ipc.send('_debug', `Submit mined solution [ ${_solution} ] for challenge [ ${this.minadoChallenge} ] with digest [ ${digest} ]`)
+                /* Build package. */
+                const pkg = {
+                    action: 'submit',
+                    // client: 'ministo',
+                    // tag: this.tag,
+                    // version: this.version,
+                    token: '0xf6E9Fc9eB4C20eaE63Cb2d7675F4dD48B008C531', // ZeroGold
+                    solution: _solution,
+                    lastHashes,
+                    digest,
+                    challenge: this.minadoChallenge,
+                    difficulty: this.minadoDifficulty
+                }
 
-                    /* Build package. */
-                    const pkg = {
-                        action: 'submit',
-                        // client: 'ministo',
-                        // tag: this.tag,
-                        // version: this.version,
-                        token: '0xf6E9Fc9eB4C20eaE63Cb2d7675F4dD48B008C531', // ZeroGold
-                        solution: _solution,
-                        digest,
-                        challenge: this.minadoChallenge,
-                        difficulty: this.minadoDifficulty
-                    }
+                /* Send package. */
+                this.ws.send(JSON.stringify(pkg))
 
-                    /* Send package. */
-                    this.ws.send(JSON.stringify(pkg))
-
-                    /* Increment number of lodes. */
-                    // FIXME: Add support for larger lodes.
-                    this.numLodes++
-                } else {
-                    ipc.send('_debug', `
+                /* Increment number of lodes. */
+                // FIXME: Add support for larger (64-bit) lodes.
+                this.numLodes++
+            } else {
+                console.error(`
     Verification Failed!
     --------------------
 
-        Challenge : ${this.minadoChallenge}
-        Address   : ${this.minadoAddress}
-        Solution  : ${_solution}
-        Digest    : ${digestBN}
-        Target    : ${this.minadoTarget}
-                    `)
-                }
-            } // verifyAndSubmit
-
-            // HybridMinisto.stop()
-
-            /* Update the CPU miner's parameters. */
-            // this.updateHybridMinisto()
-
-            /* Set flag. */
-            this.isMining = true
-
-            // HybridMinisto.run((err, sol) => {
-            //     if (err) {
-            //         ipc.send('_debug', `ERROR: Failed to run 'HybridMinisto'. [ ${err} ]`)
-            //     }
-            //
-            //     if (sol) {
-            //         _verifyAndSubmit(sol)
-            //     }
-            //
-            //     /* Set flag. */
-            //     this.isMining = false
-            // })
+    Challenge : ${this.minadoChallenge}
+    Address   : ${this.minadoAddress}
+    Solution  : ${_solution}
+    Digest    : ${digestBN}
+    Target    : ${this.minadoTarget}
+                `)
+            }
         },
 
         /***********************************************************************
@@ -595,22 +546,7 @@ export default {
 
             /* Return tag. */
             return tag
-        },
-
-        /* Print/update mining stats. */
-        // printMiningStats () {
-        //     /* Set hashes. */
-        //     const hashes = HybridMinisto.hashes()
-        //
-        //     /* Calucate hashrate. */
-        //     const rate = hashes / PRINT_STATS_TIMEOUT / 1000
-        //
-        //     /* Send update for number of hashes. */
-        //     ipc.send('numHashes', numeral(hashes).format('0,0'))
-        //
-        //     /* Send update for (formatted) hash rate. */
-        //     ipc.send('hashRate', `${numeral(rate).format('0,0.00')} MH/s`)
-        // }
+        }
     },
     mounted: async function () {
         /* Initialize. */
