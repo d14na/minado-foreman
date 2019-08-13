@@ -308,9 +308,6 @@ export default {
             /* Set hashing start time. */
             this.hashStartTime = moment().unix()
 
-            // FOR TESTING PURPOSES ONLY
-            // let challenge = '0xc9ee65260340367d976a99c4b77ce5f3a52d70cb5949b5c0066a9d9f7eb340e8'
-
             /* Spawn new instance. */
             this.ps = spawn('./bin/ministo', [this.minadoChallenge, this.minadoTarget])
 
@@ -469,8 +466,6 @@ export default {
         },
 
         verifyAndSubmit (_solution) {
-            console.log('START VERIFICATION')
-
             /* Build digest hash. */
             const digest = web3Utils.soliditySha3(
                 this.minadoChallenge,
@@ -524,6 +519,29 @@ export default {
     Digest    : ${digestBN}
     Target    : ${this.minadoTarget}
                 `)
+
+                /* Stop the miner. */
+                this.stopWorker()
+
+                /* Give it a sec. */
+                setTimeout(() => {
+                    /* Start the miner. */
+                    // this.startWorker()
+
+                    /* Re-initiailze foreman. */
+                    // this.init()
+
+                    /* Build "authorization" package. */
+                    const pkg = {
+                        action: 'authorize',
+                        client: 'ministo',
+                        tag: this.tag,
+                        version: this.version
+                    }
+
+                    /* Send package. */
+                    this.ws.send(JSON.stringify(pkg))
+                }, 1000)
             }
         },
 
