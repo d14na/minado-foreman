@@ -5518,7 +5518,7 @@ mkdirp@0.5.1, mkdirp@0.5.x, "mkdirp@>=0.5 0", mkdirp@^0.5.0, mkdirp@^0.5.1, mkdi
   dependencies:
     minimist "0.0.8"
 
-moment@^2.24.0:
+moment@2.24.0:
   version "2.24.0"
   resolved "https://registry.yarnpkg.com/moment/-/moment-2.24.0.tgz#0d055d53f5052aa653c9f6eb68bb5d12bf5c2b5b"
 
@@ -7962,6 +7962,13 @@ terser@^4.1.2:
     source-map "~0.6.1"
     source-map-support "~0.5.12"
 
+"text-file-follower@https://github.com/d14na/text-file-follower":
+  version "0.1.0"
+  resolved "https://github.com/d14na/text-file-follower#dcafd98d95bed3c4d2b04fce2c158464c11af1f7"
+  dependencies:
+    underscore "1.x.x"
+    watchit "0.x.x"
+
 text-table@^0.2.0, text-table@~0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/text-table/-/text-table-0.2.0.tgz#7f5ee823ae805207c00af2df4a84ec3fcfa570b4"
@@ -8190,7 +8197,7 @@ uglify-js@3.4.x:
     commander "~2.19.0"
     source-map "~0.6.1"
 
-underscore@1.9.1:
+underscore@1.9.1, underscore@1.x.x:
   version "1.9.1"
   resolved "https://registry.yarnpkg.com/underscore/-/underscore-1.9.1.tgz#06dce34a0e68a7babc29b365b8e74b8925203961"
 
@@ -8497,6 +8504,10 @@ vue-template-es2015-compiler@^1.9.0:
 vue@2.6.10:
   version "2.6.10"
   resolved "https://registry.yarnpkg.com/vue/-/vue-2.6.10.tgz#a72b1a42a4d82a721ea438d1b6bf55e66195c637"
+
+watchit@0.x.x:
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/watchit/-/watchit-0.0.4.tgz#9ba048e7ef96062d0ecb1be059ddafedd5df5416"
 
 watchpack@^1.5.0, watchpack@^1.6.0:
   version "1.6.0"

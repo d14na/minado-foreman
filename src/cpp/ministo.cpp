@@ -1,4 +1,6 @@
 #include <chrono>
+#include <fstream>
+#include <ios>
 #include <iostream>
 
 #include "hybrid_ministo.h"
@@ -59,6 +61,13 @@ bool start(HybridMinisto* _hm)
     // NOTE: Will also reset the counter.
     int num_hashes = _hm->hashCheck();
     std::cout << "::NOTIFY:HASHES::" << num_hashes << "::" << std::endl;
+
+    /* Initialize daily activity log file. */
+    // FIXME: This should be named by date `<token_address>-YYYYMMDD.txt`
+    std::ofstream log("./logs.txt", std::ios_base::app | std::ios_base::out);
+
+    /* Write daily acivity to log. */
+    log << _hm->solution() << ":" << elapsedSeconds.count() << ":" << num_hashes << std::endl;
 
     /* Validate solution. */
     // NOTE: 32 bytes as a (0x) formatted string
