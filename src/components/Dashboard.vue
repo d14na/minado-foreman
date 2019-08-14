@@ -302,25 +302,29 @@ export default {
         },
 
         startWorker () {
-            // console.log('STARTING CUSTOM WATCHER')
-            //
-            // const watcher = setInterval(() => {
-            //
-            // }, 5000)
+            /* Initialize token. */
+            const token = '0xf6E9Fc9eB4C20eaE63Cb2d7675F4dD48B008C531'
 
-            console.log('STARTING TEXT-FILE-FOLLOWER')
+            /* Initialize filename. */
+            const filename = `./data/20190814-${token}.log`
 
-            var follow = require('text-file-follower')
+            console.info(`Started monitoring [ ${filename} ] for changes.`)
 
-            var follower = follow('./logs.txt')
+            /* Initialize monitor. */
+            const monitor = require('text-file-follower')
 
-            follower.on('line', (filename, line) => {
-                console.log('Got a new line from ' + filename + ': ' + line)
+            /* Initialize log monitor. */
+            var logMonitor = monitor(filename)
 
+            /* Handle new line (changes). */
+            logMonitor.on('line', (filename, line) => {
+                // console.log('Got a new line from ' + filename + ': ' + line)
+
+                /* Parse the log entry. */
                 this.parseLog(line)
             })
 
-            return
+            // return
 
             /* Initialize cross spawn. */
             // const spawn = require('cross-spawn')
@@ -331,9 +335,9 @@ export default {
 
             /* Spawn new instance. */
             // NOTE: `pipe` may be required on Windows to prevent hanging.
-            // this.ps = spawn('./bin/ministo', [this.minadoChallenge, this.minadoTarget], { stdio: 'pipe' })
-            // this.ps = spawn('./bin/ministo', [this.minadoChallenge, this.minadoTarget])
-            this.ps = spawn('./bin/ministo', [this.minadoChallenge, this.minadoTarget], { stdio: 'ignore' })
+            // this.ps = spawn('./bin/minadod', [this.minadoChallenge, this.minadoTarget], { stdio: 'pipe' })
+            this.ps = spawn('./bin/minadod', [token, this.minadoChallenge, this.minadoTarget])
+            // this.ps = spawn('./bin/minadod', [this.minadoChallenge, this.minadoTarget], { stdio: 'ignore' })
 
             /* Handle (incoming) data. */
             // this.ps.stdout.on('data', (data) => {
@@ -407,9 +411,11 @@ export default {
 
             console.log('INCOMING LINE', _line)
 
-            const solution = _line.split(':')[0]
-            const secondsToSolve = _line.split(':')[1]
-            const latestHashes = _line.split(':')[2]
+            const timestamp = _line.split(' ')[0]
+            const challenge = _line.split(' ')[1]
+            const solution = _line.split(' ')[2]
+            const latestHashes = _line.split(' ')[3]
+            const secondsToSolve = _line.split(' ')[4]
 
             /* Convert to a big number. */
             let hashes = web3Utils.toBN(latestHashes)
@@ -445,96 +451,6 @@ export default {
             }
         },
 
-        // parseData (_data) {
-        //     /* Validate data. */
-        //     if (!_data) {
-        //         return console.error('The `parseData` you sent is invalid!')
-        //     }
-        //
-        //     /* Initialize data. */
-        //     // NOTE: Data arrives as a buffer (from `cross-spawn`).
-        //     const data = _data.toString()
-        //
-        //     // console.log('INCOMING DATA', data)
-        //
-        //     /* Split the data into lines. */
-        //     const lines = data.split('\n')
-        //
-        //     /* Iterate through and parse each line of data. */
-        //     for (let line of lines) {
-        //         /* Validate line and look for command prefix. */
-        //         if (line !== '' && line.slice(0, 2) === '::') {
-        //             // console.log('THIS IS A COMMAND', data)
-        //
-        //             /* Locate data break. */
-        //             // Separates the `command` from the `value`.
-        //             let dataBreak = line.indexOf('::', 2)
-        //
-        //             /* Parse the command. */
-        //             const cmd = line.slice(2, dataBreak)
-        //
-        //             // console.log('COMMAND', cmd)
-        //
-        //             /* Locate data termination. */
-        //             let dataTerm = line.indexOf('::', dataBreak + 2)
-        //
-        //             /* Parse the value. */
-        //             const val = line.slice(dataBreak + 2, dataTerm)
-        //
-        //             // console.log('VALUE', val)
-        //
-        //             /* Handle commands. */
-        //             switch (cmd) {
-        //                 case 'NOTIFY:HASHES':
-        //                     /* Convert to a big number. */
-        //                     let hashes = web3Utils.toBN(val)
-        //
-        //                     /* Add to last hashes. */
-        //                     this.lastHashes = this.lastHashes.add(hashes)
-        //
-        //                     /* Add to total hashes. */
-        //                     this.totalHashes = this.totalHashes.add(hashes)
-        //
-        //                     let bnSecondsElapsed = web3Utils.toBN(
-        //                         moment().unix() - this.hashStartTime)
-        //
-        //                     let hashRate = this.totalHashes.div(bnSecondsElapsed)
-        //
-        //                     /* Update hash rate. */
-        //                     this.hashRate = hashRate
-        //
-        //                     break
-        //                 case 'NOTIFY:SOLUTION':
-        //                     /* Update real-time data. */
-        //                     this.realtime = `${cmd}\n${val.replace(/:/g, '\n')} (seconds)`
-        //
-        //                     /* Parse out the solution. */
-        //                     let solution = val.split(':')[0]
-        //
-        //                     /* Validate solution. */
-        //                     if (solution.length === 66) {
-        //                         /* Verify and submit solution. */
-        //                         this.verifyAndSubmit(solution)
-        //
-        //                         // FOR TESTING PURPOSES ONLY
-        //                         // if (this.numLodes > 5)
-        //                         //     this.stopWorker()
-        //                     } else {
-        //                         console.error(`[ ${solution} ] failed to validate.`)
-        //                         // TODO Handle error!
-        //                     }
-        //
-        //                     break
-        //                 default:
-        //                     /* Update real-time data. */
-        //                     this.realtime = `${cmd}\n${val}`
-        //
-        //                     // TODO Add remaining handlers.
-        //             }
-        //         }
-        //     }
-        // },
-        //
         verifyAndSubmit (_solution) {
             /* Build digest hash. */
             const digest = web3Utils.soliditySha3(

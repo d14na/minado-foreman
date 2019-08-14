@@ -52,30 +52,35 @@ bool start(HybridMinisto* _hm)
      */
     _hm->run();
 
-    /* Get time now. */
-    auto completeTime = std::chrono::system_clock::now();
-
-    /* Calculate time difference (in seconds). */
-    std::chrono::duration<double> elapsedSeconds = completeTime - nowTime;
-
-    /* Print to console (in machine format). */
-    std::cout << "::NOTIFY:SOLUTION::" << _hm->solution() << ":" << elapsedSeconds.count() << "::" << std::endl;
-
-    /* Retrieve number of hashes. */
-    // NOTE: Will also reset the counter.
-    int num_hashes = _hm->hashCheck();
-    std::cout << "::NOTIFY:HASHES::" << num_hashes << "::" << std::endl;
-
-    /* Initialize daily activity log file. */
-    std::ofstream log("./data/" + mToken + '-' + CurrentDateAsString() + ".log", std::ios_base::app | std::ios_base::out);
-
-    /* Write daily acivity to log. */
-    log << CurrentDateAsString(false) << " " << _hm->solution() << " " << elapsedSeconds.count() << " " << num_hashes << std::endl;
-
     /* Validate solution. */
     // NOTE: 32 bytes as a (0x) formatted string
     // FIXME Do we need to perform better validation here??
     if (_hm->solution().size() == 66) {
+        /* Get time now. */
+        auto completeTime = std::chrono::system_clock::now();
+
+        /* Calculate time difference (in seconds). */
+        std::chrono::duration<double> elapsedSeconds = completeTime - nowTime;
+
+        /* Print to console (in machine format). */
+        // std::cout << "::NOTIFY:SOLUTION::" << _hm->solution() << ":" << elapsedSeconds.count() << "::" << std::endl;
+
+        /* Retrieve number of hashes. */
+        // NOTE: Will also reset the counter.
+        int num_hashes = _hm->hashCheck();
+        // std::cout << "::NOTIFY:HASHES::" << num_hashes << "::" << std::endl;
+
+        std::cout << CurrentDateAsString(false) << " " << mChallenge << " " << _hm->solution() << " " << num_hashes << " " << elapsedSeconds.count() << std::endl;
+
+        /* Initialize daily activity log file. */
+        std::ofstream log("./data/" + CurrentDateAsString() + '-' + mToken + ".log", std::ios_base::app | std::ios_base::out);
+
+        /* Write daily acivity to log. */
+        log << CurrentDateAsString(false) << " " << mChallenge << " " << _hm->solution() << " " << num_hashes << " " << elapsedSeconds.count() << std::endl;
+
+        /* Close daily activity log file. */
+        log.close();
+
         /* GO AGAIN!! */
         start(_hm);
     } else {
