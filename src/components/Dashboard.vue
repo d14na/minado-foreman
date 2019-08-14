@@ -302,17 +302,32 @@ export default {
         },
 
         startWorker () {
-            console.log('STARTING TEXT-FILE-FOLLOWER')
+            console.log('STARTING CHOKIDAR')
 
-            var follow = require('text-file-follower')
+            const chokidar = require('chokidar');
 
-            var follower = follow('./logs.txt')
-
-            follower.on('line', (filename, line) => {
-                console.log('Got a new line from ' + filename + ': ' + line)
-
-                this.parseLog(line)
+            // One-liner for current directory, ignores .dotfiles
+            chokidar.watch('./logs.txt', {}).on('all', (event, path) => {
+                console.log('CHOKIDAR', event, path)
             })
+
+            // console.log('STARTING CUSTOM WATCHER')
+            //
+            // const watcher = setInterval(() => {
+            //
+            // }, 5000)
+
+            // console.log('STARTING TEXT-FILE-FOLLOWER')
+            //
+            // var follow = require('text-file-follower')
+            //
+            // var follower = follow('./logs.txt')
+            //
+            // follower.on('line', (filename, line) => {
+            //     console.log('Got a new line from ' + filename + ': ' + line)
+            //
+            //     this.parseLog(line)
+            // })
 
             // return
 
