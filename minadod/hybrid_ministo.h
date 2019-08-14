@@ -75,4 +75,4 @@ class HybridMinisto
         void set(void (CPUSolver::*fn)(std::string const&), std::string const& p);
 };
 
-#endif // ! _CPUMINER_H_
+#endif // ! _HYBRIDMINISTO_H_

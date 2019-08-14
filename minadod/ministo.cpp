@@ -2,12 +2,16 @@
 #include <fstream>
 #include <ios>
 #include <iostream>
+#include <sstream>
 
 #include "hybrid_ministo.h"
+
+#include "./utilities.cpp"
 
 /**
  * Initialize Globals
  */
+std::string mToken;
 std::string mChallenge;
 std::string mHardwareType;
 std::string mMinterAddress;
@@ -63,11 +67,10 @@ bool start(HybridMinisto* _hm)
     std::cout << "::NOTIFY:HASHES::" << num_hashes << "::" << std::endl;
 
     /* Initialize daily activity log file. */
-    // FIXME: This should be named by date `<token_address>-YYYYMMDD.txt`
-    std::ofstream log("./logs.txt", std::ios_base::app | std::ios_base::out);
+    std::ofstream log("./data/" + mToken + '-' + CurrentDateAsString() + ".log", std::ios_base::app | std::ios_base::out);
 
     /* Write daily acivity to log. */
-    log << _hm->solution() << ":" << elapsedSeconds.count() << ":" << num_hashes << std::endl;
+    log << CurrentDateAsString(false) << " " << _hm->solution() << " " << elapsedSeconds.count() << " " << num_hashes << std::endl;
 
     /* Validate solution. */
     // NOTE: 32 bytes as a (0x) formatted string
@@ -96,11 +99,68 @@ int main(int argc, char* argv[])
 
     /* Validate miner. */
     if (hybrid_ministo) {
-        /* Handle first parameter (CHALLENGE). */
+        /* Initialize mining parameters. */
+        std::string line;
+        std::string lastUpdate;
+        std::string token;
+        std::string challenge;
+        std::string target;
+        std::string hardwareType;
+        std::string minterAddress;
+
+        /* Initialize command input. */
+        std::ifstream cmdFile("./data/cmd");
+
+        /* Open file. */
+        if (cmdFile.is_open()) {
+            while (getline(cmdFile, line)) {
+                std::istringstream iss(line);
+
+                /* Validate "stream" parsing. */
+                if (!(iss >> lastUpdate >> token >> challenge >> target >> hardwareType >> minterAddress)) {
+                    std::cout << "\nOops! There was an error processing the `cmd` file.\n";
+
+                    /* Exit loop. */
+                    break;
+                }
+
+                std::cout << "lastUpdate: " << lastUpdate << " | "
+                          << "token: " << token << " | "
+                          << "challenge: " << challenge << " | "
+                          << "target: " << target << " | "
+                          << "hardwareType: " << hardwareType << " | "
+                          << "minterAddress: " << minterAddress
+                          << std::endl;
+
+                /* Set mining parameters. */
+                mToken = token;
+                mChallenge = challenge;
+                mTarget = target;
+                mHardwareType = hardwareType;
+                mMinterAddress = minterAddress;
+            }
+
+            /* Close file. */
+            cmdFile.close();
+        }
+
+        /* Handle first parameter (TOKEN). */
         if (argc > 1) {
             /* Validate user input. */
             if (std::string(argv[1]) != "")
-                mChallenge = argv[1];
+                mToken = argv[1];
+        }
+
+        /* Valdiate token. */
+        if (mToken == "") {
+            throw std::runtime_error("You MUST provide a 'Token Address' to continue.");
+        }
+
+        /* Handle first parameter (CHALLENGE). */
+        if (argc > 2) {
+            /* Validate user input. */
+            if (std::string(argv[2]) != "")
+                mChallenge = argv[2];
         }
 
         /* Valdiate challenge. */
@@ -112,10 +172,10 @@ int main(int argc, char* argv[])
         hybrid_ministo->setChallenge(mChallenge);
 
         /* Handle second parameter (TARGET). */
-        if (argc > 2) {
+        if (argc > 3) {
             /* Validate user input. */
-            if (std::string(argv[2]) != "")
-                mTarget = argv[2];
+            if (std::string(argv[3]) != "")
+                mTarget = argv[3];
         }
 
         if (mTarget == "") {
@@ -128,10 +188,10 @@ int main(int argc, char* argv[])
         hybrid_ministo->setTarget(mTarget);
 
         /* Handle third parameter (HARDWARE TYPE). */
-        if (argc > 3) {
+        if (argc > 4) {
             /* Validate user input. */
-            if (std::string(argv[3]) != "")
-                mHardwareType = argv[3];
+            if (std::string(argv[4]) != "")
+                mHardwareType = argv[4];
         }
 
         if (mHardwareType == "") {
@@ -143,10 +203,10 @@ int main(int argc, char* argv[])
         hybrid_ministo->setHardwareType(mHardwareType);
 
         /* Handle fourth parameter (MINTER ADDRESS). */
-        if (argc > 4) {
+        if (argc > 5) {
             /* Validate user input. */
-            if (std::string(argv[4]) != "")
-                mMinterAddress = argv[4];
+            if (std::string(argv[5]) != "")
+                mMinterAddress = argv[5];
         }
 
         /* Validate minter address. */

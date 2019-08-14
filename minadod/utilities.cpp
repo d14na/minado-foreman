@@ -61,3 +61,27 @@ static void HexToBytes(std::string const& hex, uint8_t bytes[])
         bytes[j] = ascii_r(hex[i], hex[i + 1]);
     }
 }
+
+/**
+ * Current Date as Formatted String
+ */
+static std::string CurrentDateAsString(bool abbreviated = true)
+{
+    time_t rawtime;
+    struct tm* timeInfo;
+    char buffer[80];
+
+    time(&rawtime);
+    timeInfo = localtime(&rawtime);
+
+    /* Format the date string (as required). */
+    if (abbreviated) {
+        strftime(buffer, 80, "%Y%m%d", timeInfo);
+    } else {
+        strftime(buffer, 80, "%Y-%m-%dT%H:%M:%S%z", timeInfo);
+    }
+
+    std::string dateString(buffer);
+
+    return dateString;
+}

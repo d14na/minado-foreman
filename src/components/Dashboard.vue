@@ -302,34 +302,25 @@ export default {
         },
 
         startWorker () {
-            console.log('STARTING CHOKIDAR')
-
-            const chokidar = require('chokidar');
-
-            // One-liner for current directory, ignores .dotfiles
-            chokidar.watch('./logs.txt', {}).on('all', (event, path) => {
-                console.log('CHOKIDAR', event, path)
-            })
-
             // console.log('STARTING CUSTOM WATCHER')
             //
             // const watcher = setInterval(() => {
             //
             // }, 5000)
 
-            // console.log('STARTING TEXT-FILE-FOLLOWER')
-            //
-            // var follow = require('text-file-follower')
-            //
-            // var follower = follow('./logs.txt')
-            //
-            // follower.on('line', (filename, line) => {
-            //     console.log('Got a new line from ' + filename + ': ' + line)
-            //
-            //     this.parseLog(line)
-            // })
+            console.log('STARTING TEXT-FILE-FOLLOWER')
 
-            // return
+            var follow = require('text-file-follower')
+
+            var follower = follow('./logs.txt')
+
+            follower.on('line', (filename, line) => {
+                console.log('Got a new line from ' + filename + ': ' + line)
+
+                this.parseLog(line)
+            })
+
+            return
 
             /* Initialize cross spawn. */
             // const spawn = require('cross-spawn')
