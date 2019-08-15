@@ -322,11 +322,11 @@ export default {
             /* Encode to buffer. */
             const clBuffer = Buffer.from(cmdLine)
 
-            // fs.writeFile('message.txt', clBuffer, (err) => {
-            //     if (err) throw err
-            //
-            //     console.log('The file has been saved!')
-            // })
+            fs.writeFile('./data/cmd', clBuffer, (err) => {
+                if (err) throw err
+
+                console.log('The file has been saved!')
+            })
         },
 
         startWorker () {
@@ -390,7 +390,7 @@ export default {
                                 // console.log('READ _bytesRead', _bytesRead);
                                 // console.log('READ _buffer', _buffer);
 
-                                console.log('DELTA DATA', deltaData.toString())
+                                // console.log('DELTA DATA', deltaData.toString())
 
                                 let delta = deltaData.toString()
 
@@ -402,17 +402,17 @@ export default {
 
                                 /* Check for multiple lines. */
                                 if (delta.indexOf('\n') !== -1) {
-                                    console.error('OH NO. WE GOTTA SPLIT THIS ONE', deltaSize)
+                                    // console.error('OH NO. WE GOTTA SPLIT THIS ONE', deltaSize)
 
                                     let lines = delta.split('\n')
 
                                     for (let line of lines) {
-                                        console.log('MULTIPLE LINE', line)
+                                        // console.log('MULTIPLE LINE', line)
 
                                         this.parseLog(line)
                                     }
                                 } else {
-                                    console.log('JUST A SINGLE LINE', delta)
+                                    // console.log('JUST A SINGLE LINE', delta)
 
                                     this.parseLog(delta)
                                 }
@@ -420,17 +420,7 @@ export default {
                         })
                     }
                 })
-
-                // try {
-                //     fs.open(filepath, 'wx', (err, fd) => {
-                //         //
-                //
-                //     })
-                //
-                // } catch (err) {
-                //     console.error(err)
-                // }
-            }, 10000)
+            }, 500)
 
             // return
 
@@ -443,9 +433,14 @@ export default {
 
             /* Spawn new instance. */
             // NOTE: `pipe` may be required on Windows to prevent hanging.
+            this.ps = spawn('./bin/minadod')
             // this.ps = spawn('./bin/minadod', [this.minadoChallenge, this.minadoTarget], { stdio: 'pipe' })
-            this.ps = spawn('./bin/minadod', [this.minadoToken, this.minadoChallenge, this.minadoTarget])
+            // this.ps = spawn('./bin/minadod', [this.minadoToken, this.minadoChallenge, this.minadoTarget])
             // this.ps = spawn('./bin/minadod', [this.minadoChallenge, this.minadoTarget], { stdio: 'ignore' })
+
+            this.ps.stderr.on('data', (data) => {
+                console.log(`stderr: ${data}`);
+            })
 
             /* Handle (worker) close. */
             this.ps.on('close', (code) => {
@@ -504,7 +499,7 @@ export default {
                 return console.error('The line you sent is invalid!')
             }
 
-            console.log('INCOMING LINE', _line)
+            // console.log('INCOMING LINE', _line)
 
             const timestamp = _line.split(' ')[0]
             const challenge = _line.split(' ')[1]
