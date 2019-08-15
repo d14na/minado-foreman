@@ -111,3 +111,20 @@ static std::string TimeAgo(std::string _timeSince)
         return std::to_string(timeDiff) + " seconds ago";
     }
 }
+
+/**
+ * Time Ago
+ */
+static int TimeAgo(int _timeSince)
+{
+    auto nowTime = std::chrono::system_clock::now();
+
+    std::time_t timestamp =
+        std::chrono::system_clock::to_time_t(nowTime);
+
+    /* Calculate the time difference. */
+    int timeDiff = timestamp - _timeSince;
+
+    /* Return time difference (in seconds). */
+    return timeDiff;
+}

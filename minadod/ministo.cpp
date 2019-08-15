@@ -17,8 +17,9 @@ std::string mHardwareType;
 std::string mMinterAddress;
 std::string mTarget;
 
-int shiftStart = 0;
-const int MAX_SHIFT_DURATION = 900; // no shift will last longer than 15 mintues
+int mLastRequest = 0;
+int mRequestTime = 0;
+const int MAX_REQUEST_DURATION = 900; // NO request will last longer than 15 mintues
 
 /**
  * Load Command (Text) File
@@ -65,6 +66,7 @@ void loadCmdFile()
                       << "    Minter Address : " << minterAddress << std::endl;
 
             /* Set mining parameters. */
+            mLastRequest = std::stoi(lastRequest);
             mToken = token;
             mChallenge = challenge;
             mTarget = target;
@@ -92,12 +94,12 @@ bool start(HybridMinisto* _hm)
         std::chrono::system_clock::to_time_t(nowTime);
 
     /* Check shift time. */
-    if (shiftStart == 0) {
-        shiftStart = startTime;
+    if (mRequestTime == 0) {
+        mRequestTime = startTime;
     } else {
-        if (startTime > shiftStart + MAX_SHIFT_DURATION) {
+        if (startTime > mRequestTime + MAX_REQUEST_DURATION) {
             /* Print to console (in machine format). */
-            // std::cout << "::NOTIFY:YOUR_SHIFT_IS_COMPLETE::" << std::endl;
+            // std::cout << "YOUR REQUEST HAS TIMED OUT! PLEASE CHECK MINADO FOREMAN." << std::endl;
 
             // return 0;
         }
@@ -121,13 +123,9 @@ bool start(HybridMinisto* _hm)
         /* Calculate time difference (in seconds). */
         std::chrono::duration<double> elapsedSeconds = completeTime - nowTime;
 
-        /* Print to console (in machine format). */
-        // std::cout << "::NOTIFY:SOLUTION::" << _hm->solution() << ":" << elapsedSeconds.count() << "::" << std::endl;
-
         /* Retrieve number of hashes. */
         // NOTE: Will also reset the counter.
         int num_hashes = _hm->hashCheck();
-        // std::cout << "::NOTIFY:HASHES::" << num_hashes << "::" << std::endl;
 
         std::cout << CurrentDateAsString(false) << " " << mChallenge << " " << _hm->solution() << " " << num_hashes << " " << elapsedSeconds.count() << std::endl;
 
@@ -143,7 +141,15 @@ bool start(HybridMinisto* _hm)
         /* (Re-)load the command file. */
         loadCmdFile();
 
-        /* GO AGAIN!! */
+        std::time_t expTime =
+            std::chrono::system_clock::to_time_t(completeTime);
+
+        /* Validate last request time. */
+        if (expTime > mLastRequest + MAX_REQUEST_DURATION) {
+            throw std::runtime_error("Your `cmd` file has an EXPIRED request time.");
+        }
+
+        /* OKAY, LET'S GO AGAIN!! */
         start(_hm);
     } else {
         std::cout << "Something went wrong. This is the solution we received: " << _hm->solution() << std::endl;
@@ -168,6 +174,17 @@ int main(int argc, char* argv[])
     if (hybrid_ministo) {
         /* Load the command file. */
         loadCmdFile();
+
+        /* Get time now. */
+        auto nowTime = std::chrono::system_clock::now();
+
+        std::time_t expTime =
+            std::chrono::system_clock::to_time_t(nowTime);
+
+        /* Validate last request time. */
+        if (expTime > mLastRequest + MAX_REQUEST_DURATION) {
+            throw std::runtime_error("Your `cmd` file has an EXPIRED request time.");
+        }
 
         /* Handle first parameter (TOKEN). */
         // if (argc > 1) {
