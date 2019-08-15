@@ -17,7 +17,6 @@ std::string mHardwareType;
 std::string mMinterAddress;
 std::string mTarget;
 
-int mLastRequest = 0;
 int mRequestTime = 0;
 const int MAX_REQUEST_DURATION = 900; // NO request will last longer than 15 mintues
 
@@ -26,11 +25,11 @@ const int MAX_REQUEST_DURATION = 900; // NO request will last longer than 15 min
  *
  * NOTE: Located (by default) at `./data/cmd`.
  */
-void loadCmdFile()
+void loadCmdFile(bool _verbose = false)
 {
     /* Initialize mining parameters. */
     std::string line;
-    std::string lastRequest;
+    std::string requestTime;
     std::string token;
     std::string challenge;
     std::string target;
@@ -49,24 +48,26 @@ void loadCmdFile()
             std::istringstream iss(line);
 
             /* Validate "stream" parsing. */
-            if (!(iss >> lastRequest >> token >> challenge >> target >> hardwareType >> minterAddress)) {
+            if (!(iss >> requestTime >> token >> challenge >> target >> hardwareType >> minterAddress)) {
                 std::cout << "\nOops! There was an error processing the `cmd` file.\n";
 
                 /* Exit loop. */
                 break;
             }
 
-            std::cout << "\n\nMinisto's Command Parameters" << std::endl
-                      << "----------------------------" << std::endl
-                      << "    Last Requested : " << TimeAgo(lastRequest) << " [ " << filename << " ]" << std::endl
-                      << "    Token          : " << token << std::endl
-                      << "    Challenge      : " << challenge << std::endl
-                      << "    Target         : " << target << std::endl
-                      << "    HardwareType   : " << hardwareType << std::endl
-                      << "    Minter Address : " << minterAddress << std::endl;
+            if (_verbose) {
+                std::cout << "\n\nMinisto's Command Parameters" << std::endl
+                          << "----------------------------" << std::endl
+                          << "    Last Requested : " << TimeAgo(requestTime) << " [ " << filename << " ]" << std::endl
+                          << "    Token          : " << token << std::endl
+                          << "    Challenge      : " << challenge << std::endl
+                          << "    Target         : " << target << std::endl
+                          << "    HardwareType   : " << hardwareType << std::endl
+                          << "    Minter Address : " << minterAddress << std::endl;
+            }
 
             /* Set mining parameters. */
-            mLastRequest = std::stoi(lastRequest);
+            mRequestTime = std::stoi(requestTime);
             mToken = token;
             mChallenge = challenge;
             mTarget = target;
@@ -93,16 +94,25 @@ bool start(HybridMinisto* _hm)
     std::time_t startTime =
         std::chrono::system_clock::to_time_t(nowTime);
 
-    /* Check shift time. */
-    if (mRequestTime == 0) {
-        mRequestTime = startTime;
-    } else {
-        if (startTime > mRequestTime + MAX_REQUEST_DURATION) {
-            /* Print to console (in machine format). */
-            // std::cout << "YOUR REQUEST HAS TIMED OUT! PLEASE CHECK MINADO FOREMAN." << std::endl;
+    // std::cout << "startTime: " << startTime << std::endl;
+    // std::cout << "mRequestTime: " << mRequestTime << std::endl;
+    // std::cout << "mRequestTime + MAX_REQUEST_DURATION: " << mRequestTime + MAX_REQUEST_DURATION << std::endl;
 
-            // return 0;
-        }
+    if (startTime > mRequestTime + MAX_REQUEST_DURATION) {
+        // std::cout << "PAST DUE: " << (startTime - (mRequestTime + MAX_REQUEST_DURATION)) << std::endl;
+
+        /* Print to console (in machine format). */
+        std::cout << "Waiting for NEW Shift Commands.." << std::endl;
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+        // std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+        /* (Re-)load the command file. */
+        loadCmdFile(true);
+
+        // return 0;
+        /* Try to re-start. */
+        start(_hm);
     }
 
     std::cout << "\nStarting Ministo's Solver @ " << std::ctime(&startTime) << std::endl;
@@ -141,15 +151,15 @@ bool start(HybridMinisto* _hm)
         log.close();
 
         /* (Re-)load the command file. */
-        loadCmdFile();
+        loadCmdFile(true);
 
-        std::time_t expTime =
-            std::chrono::system_clock::to_time_t(completeTime);
+        // std::time_t expTime =
+        //     std::chrono::system_clock::to_time_t(completeTime);
 
         /* Validate last request time. */
-        if (expTime > mLastRequest + MAX_REQUEST_DURATION) {
-            throw std::runtime_error("Your `cmd` file has an EXPIRED request time.");
-        }
+        // if (expTime > mRequestTime + MAX_REQUEST_DURATION) {
+        //     throw std::runtime_error("\n\nYour `cmd` file has an EXPIRED request time.\n");
+        // }
 
         /* OKAY, LET'S GO AGAIN!! */
         start(_hm);
@@ -175,18 +185,24 @@ int main(int argc, char* argv[])
     /* Validate miner. */
     if (hybrid_ministo) {
         /* Load the command file. */
-        loadCmdFile();
+        loadCmdFile(true);
+
+        /* Skip initialization if the cmd file is disabled. */
+        if (mRequestTime == -1) {
+            /* Start the miner. */
+            return start(hybrid_ministo);
+        }
 
         /* Get time now. */
-        auto nowTime = std::chrono::system_clock::now();
+        // auto nowTime = std::chrono::system_clock::now();
 
-        std::time_t expTime =
-            std::chrono::system_clock::to_time_t(nowTime);
+        // std::time_t expTime =
+        //     std::chrono::system_clock::to_time_t(nowTime);
 
         /* Validate last request time. */
-        if (expTime > mLastRequest + MAX_REQUEST_DURATION) {
-            throw std::runtime_error("Your `cmd` file has an EXPIRED request time.");
-        }
+        // if (expTime > mRequestTime + MAX_REQUEST_DURATION) {
+        //     throw std::runtime_error("Your `cmd` file has an EXPIRED request time.");
+        // }
 
         /* Handle first parameter (TOKEN). */
         // if (argc > 1) {

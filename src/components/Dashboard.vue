@@ -88,6 +88,9 @@ const MINADO_NETWORK_URL = 'http://asia.minado.network'
 const PRINT_STATS_TIMEOUT = 5000
 const UINT256_LENGTH = 32
 
+/* Initialize file monitor (interval id). */
+let mFileMonitor = 0
+
 let GPUMiner = null // eslint-disable-line no-unused-vars
 
 export default {
@@ -357,25 +360,17 @@ export default {
             /* Initialize log (file) size. */
             let mLogSize = fileSizeInBytes
 
-            /* Initialize token. */
-            // const token = '0xf6E9Fc9eB4C20eaE63Cb2d7675F4dD48B008C531'
+            /* Validate file monitor. */
+            if (mFileMonitor) {
+                /* Clear the interval. */
+                clearInterval(mFileMonitor)
 
-            // /* Initialize monitor. */
-            // const monitor = require('text-file-follower')
-            //
-            // /* Initialize log monitor. */
-            // var logMonitor = monitor(filepath)
-            //
-            // /* Handle new line (changes). */
-            // logMonitor.on('line', (filepath, line) => {
-            //     // console.log('Got a new line from ' + filepath + ': ' + line)
-            //
-            //     /* Parse the log entry. */
-            //     this.parseLog(line)
-            // })
+                /* Set to zero. */
+                mFileMonitor = 0
+            }
 
             /* Initialize file monitoring interval. */
-            const fileMonitor = setInterval(() => {
+            mFileMonitor = setInterval(() => {
                 // console.log('running interval', moment(). unix())
 
                 fs.exists(filepath, (_doesExist) => {
@@ -435,14 +430,14 @@ export default {
                 })
             }, 500)
 
+            /* Set hashing start time. */
+            this.hashStartTime = moment().unix()
+
             // return
 
             /* Initialize cross spawn. */
             // const spawn = require('cross-spawn')
             const { spawn } = require('child_process')
-
-            /* Set hashing start time. */
-            this.hashStartTime = moment().unix()
 
             /* Spawn new instance. */
             // NOTE: `pipe` may be required on Windows to prevent hanging.
@@ -468,14 +463,42 @@ export default {
             })
         },
 
+        /**
+         * Stop Worker
+         *
+         * This will set the `cmd` file to a state that will disable
+         * the operation of `minadod`.
+         *
+         * NOTE: `minadod` will continue to "monitor" the `cmd` file
+         *       for an updated state, with parameters to resume processing.
+         */
         stopWorker () {
-            if (this.ps) {
-                /* Terminate the process. */
-                this.ps.kill('SIGTERM')
+            /* Clear the interval. */
+            clearInterval(mFileMonitor)
 
-                /* Update display. */
-                this.realtime = 'Worker has stopped!'
-            }
+            /* Set to zero. */
+            mFileMonitor = 0
+
+            /* Initialize command line. */
+            const cmdLine = `-1 0x0 0x0 0x0 cpu 0x0`
+            console.log('WROTE CMD LINE TO FILE', cmdLine)
+
+            /* Encode to buffer. */
+            const clBuffer = Buffer.from(cmdLine)
+
+            fs.writeFile('./data/cmd', clBuffer, (err) => {
+                if (err) throw err
+
+                console.log('The file has been saved!')
+            })
+
+            // if (this.ps) {
+            //     /* Terminate the process. */
+            //     this.ps.kill('SIGTERM')
+            //
+            //     /* Update display. */
+            //     this.realtime = 'Worker has stopped!'
+            // }
         },
 
         /* Retrieve the current tag. */
@@ -610,7 +633,7 @@ export default {
     Challenge : ${this.minadoChallenge}
     Address   : ${this.minadoAddress}
     Solution  : ${_solution}
-    Digest    : ${digestBN.toString(16)}
+    Digest    : ${digest}
     Target    : ${this.minadoTarget}
                 `)
 

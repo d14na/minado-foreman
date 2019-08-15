@@ -19,7 +19,6 @@
     "electron-store": "4.0.0",
     "moment": "2.24.0",
     "numeral": "2.0.6",
-    "text-file-follower": "https://github.com/d14na/text-file-follower",
     "vue": "2.6.10",
     "web3-utils": "1.2.0"
   },
