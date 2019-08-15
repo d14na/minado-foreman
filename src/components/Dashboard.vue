@@ -595,11 +595,8 @@ export default {
                 /* Send package. */
                 this.ws.send(JSON.stringify(pkg))
 
-                /* Calculate full lode size. */
-                const fullLodeSize = this.numLodes * this.minadoDifficulty
-
                 /* Add full lode. */
-                this.numLodes = this.numLodes + fullLodeSize
+                this.numLodes = this.numLodes + this.minadoDifficulty
             } else {
                 console.error(`
     Verification Failed!
