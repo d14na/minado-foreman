@@ -595,8 +595,13 @@ export default {
                 /* Send package. */
                 this.ws.send(JSON.stringify(pkg))
 
+                console.log('this.numLodes', this.numLodes, 'this.minadoDifficulty', this.minadoDifficulty)
+
+                /* Set difficulty BigNumber. */
+                const difficultyBN = web3Utils.toBN(this.minadoDifficulty)
+
                 /* Add full lode. */
-                this.numLodes = this.numLodes + this.minadoDifficulty
+                this.numLodes = this.numLodes.add(difficultyBN)
             } else {
                 console.error(`
     Verification Failed!
