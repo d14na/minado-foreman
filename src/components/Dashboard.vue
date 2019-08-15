@@ -108,7 +108,7 @@ export default {
         hashRate: web3Utils.toBN(0), // this is a BigNumber
         lastHashes: web3Utils.toBN(0), // this is a BigNumber
         totalHashes: web3Utils.toBN(0), // this is a BigNumber
-        numLodes: 0,
+        numLodes: web3Utils.toBN(0), // this is a BigNumber
 
         avatarSize: 64,
         tag: '',
@@ -201,7 +201,7 @@ export default {
                 return totalHashesDecimal.toNumber()
         },
         numLodesDisplay () {
-            return numeral(this.numLodes).format('0,0')
+            return numeral(this.numLodes.toString()).format('0,0')
         }
     },
     methods: {
@@ -549,10 +549,6 @@ export default {
 
                 /* Verify and submit solution. */
                 this.verifyAndSubmit(solution)
-
-                // FOR TESTING PURPOSES ONLY
-                // if (this.numLodes > 5)
-                //     this.stopWorker()
             } else {
                 console.error(`[ ${solution} ] failed to validate.`)
                 // TODO Handle error!
@@ -599,9 +595,11 @@ export default {
                 /* Send package. */
                 this.ws.send(JSON.stringify(pkg))
 
-                /* Increment number of lodes. */
-                // FIXME: Add support for larger (64-bit) lodes.
-                this.numLodes++
+                /* Calculate full lode size. */
+                const fullLodeSize = this.numLodes * this.minadoDifficulty
+
+                /* Add full lode. */
+                this.numLodes = this.numLodes + fullLodeSize
             } else {
                 console.error(`
     Verification Failed!
