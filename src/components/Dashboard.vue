@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div id="container">
         <span class="headline">
             Minado Foreman
             <small><em><small>v{{version}}</small></em></small>
@@ -26,24 +26,30 @@
 
         <div class="system-status mt-2">
             <div class="left-side">
-                <ul>
-                    <li>Windows 10</li>
-                    <li>8GB Ram</li>
-                    <li>FAST Connectivity</li>
-                </ul>
+                <div>
+                    Power Level: <strong class="red--text">{{powerLevel}}</strong>
+                </div>
+
+                <div>
+                    ...
+                </div>
+
+                <div>
+                    FAST Connectivity
+                </div>
             </div>
 
             <div class="right-side">
                 <div>
-                    Hash Rate: <span class="red--text">{{hashRateDisplay}}</span>
+                    Hash Rate: <strong class="red--text">{{hashRateDisplay}}</strong>
                 </div>
 
                 <div>
-                    # Hashes: {{totalHashesDisplay}}
+                    # Hashes: <strong>{{totalHashesDisplay}}</strong>
                 </div>
 
                 <div>
-                    Lodes Delivered: <span class="red--text">{{numLodesDisplay}}</span>
+                    Lodes Delivered: <strong class="red--text">{{numLodesDisplay}}</strong>
                 </div>
             </div>
         </div>
@@ -119,6 +125,13 @@ export default {
         challengeDisplay () {
             if (this.minadoChallenge) {
                 return this.minadoChallenge
+            } else {
+                return 'n/a'
+            }
+        },
+        powerLevel () {
+            if (this.minadoDifficulty) {
+                return this.minadoDifficulty
             } else {
                 return 'n/a'
             }
@@ -446,6 +459,11 @@ export default {
             this.ps.on('close', (code) => {
                 if (code !== 0) {
                     console.log(`Process exited with code [ ${code} ]`)
+
+                    /* Wait a sec, then re-start. */
+                    setTimeout(() => {
+                        this.startWorker() // TEMP FOR DEVELOPMENT PURPOSES ONLY
+                    }, 1000)
                 }
             })
         },
@@ -650,6 +668,10 @@ export default {
 </script>
 
 <style lang="scss">
+#container {
+    color: #eef;
+}
+
 .system-status {
     display: flex;
     justify-content: space-between;
