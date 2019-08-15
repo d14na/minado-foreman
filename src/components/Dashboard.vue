@@ -248,6 +248,9 @@ export default {
                             this.minadoDifficulty = data.difficulty
                             this.minadoTarget = data.target
 
+                            /* Update the command file. */
+                            this.updateCmdFile(data)
+
                             /* Start the miner. */
                             this.startWorker()
                         }, 1000)
@@ -299,6 +302,18 @@ export default {
         /* Open web browser hyperlink. */
         open (link) {
             this.$electron.shell.openExternal(link)
+        },
+
+        updateCmdFile (_data) {
+            /* Initialize timestamp. */
+            const timestamp = moment().unix()
+
+            /* Initialize token. */
+            const token = '0xf6E9Fc9eB4C20eaE63Cb2d7675F4dD48B008C531'
+
+            const cmdLine = `${timestamp} ${token} ${_data.challenge} ${_data.target} cpu ${_data.address}`
+
+            console.log('WRITE THIS CMD LINE', cmdLine)
         },
 
         startWorker () {

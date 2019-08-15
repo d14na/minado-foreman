@@ -78,10 +78,36 @@ static std::string CurrentDateAsString(bool abbreviated = true)
     if (abbreviated) {
         strftime(buffer, 80, "%Y%m%d", timeInfo);
     } else {
-        strftime(buffer, 80, "%Y-%m-%dT%H:%M:%S%z", timeInfo);
+        strftime(buffer, 80, "%Y-%m-%dT%H:%M:%S", timeInfo);
     }
 
     std::string dateString(buffer);
 
     return dateString;
+}
+
+/**
+ * Time Ago
+ */
+static std::string TimeAgo(std::string _timeSince)
+{
+    auto nowTime = std::chrono::system_clock::now();
+
+    std::time_t timestamp =
+        std::chrono::system_clock::to_time_t(nowTime);
+
+    /* Convert to integer. */
+    int timeSince = std::stoi(_timeSince);
+
+    /* Calculate the time difference. */
+    int timeDiff = timestamp - timeSince;
+
+    /* Format the label (based on duration). */
+    if (timeDiff > 3600) {
+        return std::to_string(timeDiff / 3600) + " hours ago";
+    } else if (timeDiff > 60) {
+        return std::to_string(timeDiff / 60) + " minutes ago";
+    } else {
+        return std::to_string(timeDiff) + " seconds ago";
+    }
 }
