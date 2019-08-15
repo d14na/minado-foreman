@@ -127,6 +127,8 @@ bool start(HybridMinisto* _hm)
         // NOTE: Will also reset the counter.
         int num_hashes = _hm->hashCheck();
 
+// TODO: Allow for 'Quiet Mode' for NO CONSOLE OUTPUT
+//       (also to prevent possible memory leakage from Node 'child_process')
         std::cout << CurrentDateAsString(false) << " " << mChallenge << " " << _hm->solution() << " " << num_hashes << " " << elapsedSeconds.count() << std::endl;
 
         /* Initialize daily activity log file. */

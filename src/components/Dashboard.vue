@@ -61,6 +61,8 @@ import numeral from 'numeral'
 import Store from 'electron-store'
 import SockJS from 'sockjs-client'
 
+const fs = require('fs')
+
 /* Require modules. */
 const ipc = require('electron').ipcRenderer
 const web3Utils = require('web3-utils')
@@ -88,6 +90,7 @@ export default {
         ps: null, // system process
 
         isMining: false,
+        minadoToken: '',
         minadoAddress: '',
         minadoChallenge: '',
         minadoDifficulty: '',
@@ -243,6 +246,7 @@ export default {
 
                         /* Give it a sec. */
                         setTimeout(() => {
+                            this.minadoToken = data.token
                             this.minadoAddress = data.address
                             this.minadoChallenge = data.challenge
                             this.minadoDifficulty = data.difficulty
@@ -308,36 +312,125 @@ export default {
             /* Initialize timestamp. */
             const timestamp = moment().unix()
 
-            /* Initialize token. */
-            const token = '0xf6E9Fc9eB4C20eaE63Cb2d7675F4dD48B008C531'
+            /* Initialize hardware type. */
+            const hwType = 'cpu'
 
-            const cmdLine = `${timestamp} ${token} ${_data.challenge} ${_data.target} cpu ${_data.address}`
+            /* Initialize command line. */
+            const cmdLine = `${timestamp} ${_data.token} ${_data.challenge} ${_data.target} ${hwType} ${_data.address}`
+            console.log('WROTE CMD LINE TO FILE', cmdLine)
 
-            console.log('WRITE THIS CMD LINE', cmdLine)
+            /* Encode to buffer. */
+            const clBuffer = Buffer.from(cmdLine)
+
+            // fs.writeFile('message.txt', clBuffer, (err) => {
+            //     if (err) throw err
+            //
+            //     console.log('The file has been saved!')
+            // })
         },
 
         startWorker () {
+            /* Set (formatted) date today. */
+            const dateToday = moment().format('YYYYMMDD')
+
+            /* Initialize filepath. */
+            const filepath = `./data/${dateToday}-${this.minadoToken}.log`
+
+            console.info(`Started monitoring [ ${filepath} ] for changes.`)
+
+            const stats = fs.statSync(filepath)
+            const fileSizeInBytes = stats['size']
+
+            /* Initialize log (file) size. */
+            let mLogSize = fileSizeInBytes
+
             /* Initialize token. */
-            const token = '0xf6E9Fc9eB4C20eaE63Cb2d7675F4dD48B008C531'
+            // const token = '0xf6E9Fc9eB4C20eaE63Cb2d7675F4dD48B008C531'
 
-            /* Initialize filename. */
-            const filename = `./data/20190814-${token}.log`
+            // /* Initialize monitor. */
+            // const monitor = require('text-file-follower')
+            //
+            // /* Initialize log monitor. */
+            // var logMonitor = monitor(filepath)
+            //
+            // /* Handle new line (changes). */
+            // logMonitor.on('line', (filepath, line) => {
+            //     // console.log('Got a new line from ' + filepath + ': ' + line)
+            //
+            //     /* Parse the log entry. */
+            //     this.parseLog(line)
+            // })
 
-            console.info(`Started monitoring [ ${filename} ] for changes.`)
+            /* Initialize file monitoring interval. */
+            const fileMonitor = setInterval(() => {
+                // console.log('running interval', moment(). unix())
 
-            /* Initialize monitor. */
-            const monitor = require('text-file-follower')
+                fs.exists(filepath, (_doesExist) => {
+                    // console.log(_doesExist ? 'it\'s there' : 'no passwd!')
 
-            /* Initialize log monitor. */
-            var logMonitor = monitor(filename)
+                    const stats = fs.statSync(filepath)
+                    const fileSizeInBytes = stats['size']
 
-            /* Handle new line (changes). */
-            logMonitor.on('line', (filename, line) => {
-                // console.log('Got a new line from ' + filename + ': ' + line)
+                    console.log('fileSizeInBytes', fileSizeInBytes)
 
-                /* Parse the log entry. */
-                this.parseLog(line)
-            })
+                    if (fileSizeInBytes > mLogSize) {
+                        /* Set offset. */
+                        let offset = mLogSize
+
+                        /* Update log (file) size. */
+                        mLogSize = fileSizeInBytes
+
+                        fs.open(filepath, 'r', (_err, _fd) => {
+                            let deltaSize = fileSizeInBytes - offset
+
+                            let deltaData = Buffer.alloc(deltaSize)
+
+                            fs.read(_fd, deltaData, 0, deltaSize, offset, (_err, _bytesRead, _buffer) => {
+                                // console.log('READ _err', _err);
+                                // console.log('READ _bytesRead', _bytesRead);
+                                // console.log('READ _buffer', _buffer);
+
+                                console.log('DELTA DATA', deltaData.toString())
+
+                                let delta = deltaData.toString()
+
+                                /* Remove trailing line-ending. */
+                                // NOTE: We need to split multiple lines later.
+                                if (delta.slice(-1) === '\n') {
+                                    delta = delta.slice(0, -1)
+                                }
+
+                                /* Check for multiple lines. */
+                                if (delta.indexOf('\n') !== -1) {
+                                    console.error('OH NO. WE GOTTA SPLIT THIS ONE', deltaSize)
+
+                                    let lines = delta.split('\n')
+
+                                    for (let line of lines) {
+                                        console.log('MULTIPLE LINE', line)
+
+                                        this.parseLog(line)
+                                    }
+                                } else {
+                                    console.log('JUST A SINGLE LINE', delta)
+
+                                    this.parseLog(delta)
+                                }
+                            })
+                        })
+                    }
+                })
+
+                // try {
+                //     fs.open(filepath, 'wx', (err, fd) => {
+                //         //
+                //
+                //     })
+                //
+                // } catch (err) {
+                //     console.error(err)
+                // }
+            }, 10000)
 
             // return
 
@@ -351,21 +444,8 @@ export default {
             /* Spawn new instance. */
             // NOTE: `pipe` may be required on Windows to prevent hanging.
             // this.ps = spawn('./bin/minadod', [this.minadoChallenge, this.minadoTarget], { stdio: 'pipe' })
-            this.ps = spawn('./bin/minadod', [token, this.minadoChallenge, this.minadoTarget])
+            this.ps = spawn('./bin/minadod', [this.minadoToken, this.minadoChallenge, this.minadoTarget])
             // this.ps = spawn('./bin/minadod', [this.minadoChallenge, this.minadoTarget], { stdio: 'ignore' })
-
-            /* Handle (incoming) data. */
-            // this.ps.stdout.on('data', (data) => {
-            //     // console.log(data.toString())
-            //
-            //     /* Parse the incoming data. */
-            //     // this.parseData(data)
-            // })
-
-            /* Handle data errors. */
-            // this.ps.stderr.on('data', (data) => {
-            //     console.log(`ps stderr: ${data}`)
-            // })
 
             /* Handle (worker) close. */
             this.ps.on('close', (code) => {
@@ -517,7 +597,7 @@ export default {
     Challenge : ${this.minadoChallenge}
     Address   : ${this.minadoAddress}
     Solution  : ${_solution}
-    Digest    : ${digestBN}
+    Digest    : ${digestBN.toString(16)}
     Target    : ${this.minadoTarget}
                 `)
 
